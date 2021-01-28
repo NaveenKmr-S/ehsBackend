@@ -1,18 +1,18 @@
-const express = require('express');
-const auth = require('../controller/authController');
-const verifyJwt = require("../middleware/jwt"); 
+const express = require("express");
+const auth = require("../controller/authController");
+const verifyJwt = require("../middleware/jwt");
 const router = express.Router();
 
-router.get('/getUsers',verifyJwt, auth.getUsers);
+router.get("/getUsers", verifyJwt, auth.getUsers);
 
-router.get('/getUserById/:authId',verifyJwt, auth.getUserById);
+router.get("/getUserById/:authId", verifyJwt, auth.getUserById);
 
-router.post('/signup', auth.checkAlreadyUserExist, auth.signup);
+router.post("/signup", auth.checkAlreadyUserExist, auth.signup);
 
-router.get("/activate/:token", auth.activateAccount);
+router.get("/activate/:token/:code", auth.activateAccount);
 
-router.post('/login', auth.login);
+router.post("/login", auth.login);
 
-router.post('/updateUser', auth.getUpdateUserDetails, auth.updateUserDetails);
+router.post("/updateUser", auth.updateUserDetails);
 
 module.exports = router;

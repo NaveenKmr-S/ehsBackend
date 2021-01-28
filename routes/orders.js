@@ -3,7 +3,9 @@ const orders = require("../controller/ordersController");
 const router = express.Router();
 const verifyJwt = require("../middleware/jwt");
 
-router.get("/getOrders", verifyJwt, orders.getOrders);
+router.get("/getOrders", orders.getOrders);
+
+router.get("/getOrdersById", orders.getOrdersById);
 
 router.post("/createOrder", orders.createOrders);
 

@@ -21,13 +21,10 @@ app.use(bodyparser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(helmet());
 
-
-
 const razorpay = new Razorpay({
   key_id: "rzp_test_FvIgaLsvcCd3vG",
   key_secret: "90FggbRBO4DxerTJnvxqEhI4",
 });
-
 
 app.post("/verification", (req, res) => {
   // do a validation
@@ -41,27 +38,27 @@ app.post("/verification", (req, res) => {
   shasum.update(JSON.stringify(req.body));
   const digest = shasum.digest("hex");
 
-  console.log(digest, req.headers["x-razorpay-signature"]);
+  // console.log(digest, req.headers["x-razorpay-signature"]);
 
   if (digest === req.headers["x-razorpay-signature"]) {
-    console.log("request is legit");
     // process it
+
+    console.log("request is legit");
     console.log(req.body);
-    require("fs").writeFileSync(
-      "payment1.json",
-      JSON.stringify(req.body, null, 4)
-    );
+    // require("fs").writeFileSync(
+    //   "payment1.json",
+    //   JSON.stringify(req.body, null, 4)
+    // );
   } else {
     // pass it
+    req.json({ status: "failed", message: req.body });
   }
   res.json({ status: "ok" });
 });
 
-
-
 app.post("/razorpay", async (req, res) => {
   const payment_capture = 1;
-  const amount = 499;
+  const amount = req.body.amount;
   const currency = "INR";
 
   const options = {
@@ -77,17 +74,12 @@ app.post("/razorpay", async (req, res) => {
     res.json({
       id: response.id,
       currency: response.currency,
-      amount: response.amount,
+      amount: response.amount / 100,
     });
   } catch (error) {
     console.log(error);
   }
 });
-
-
-
-
-
 
 app.use("/assets/uploads", express.static(__dirname + "/assets/uploads"));
 
@@ -125,8 +117,8 @@ app.get("/", (req, res) => {
 mongoose
   .connect(
     "mongodb+srv://Naveen:ehs@cluster0.6g1vh.mongodb.net/ehsdb?retryWrites=true&w=majority",
-//     "mongodb+srv://balu:mongopassword@cluster0.6ujrr.mongodb.net/example?retryWrites=true&w=majority"
-// ,
+    //     "mongodb+srv://balu:mongopassword@cluster0.6ujrr.mongodb.net/example?retryWrites=true&w=majority"
+    // ,
     { useNewUrlParser: true, useUnifiedTopology: true }
   )
   .then(() => {

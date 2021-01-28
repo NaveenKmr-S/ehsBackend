@@ -36,7 +36,7 @@ exports.createPoster = async (req, res, next) => {
     subCategory,
     language,
     creator,
-    imgUrl: imgUrl,
+    imgUrl:imgUrl,
     priceGroup,
     description,
     originalPrice,
@@ -96,10 +96,12 @@ exports.getPosterById = (req, res, next) => {
   }
 };
 
+
 exports.getPosterBySubCategory = (req, res, next) => {
   try {
     let subCategory = req.params.subCategory;
     try {
+    
       posterDb
         .find({ isActive: true })
         .populate("category", "title")
@@ -109,23 +111,31 @@ exports.getPosterBySubCategory = (req, res, next) => {
         .then((poster) => {
           if (!poster) res.status(404).json({ message: "poster not found!!!" });
           else {
-            let poster2 = poster.filter((v) => v.subCategory.title === subCategory);
-            console.log(subCategory);
-            res
-              .status(200)
-              .json({ message: "succesfully loaded", posterData: poster2 });
+            try {
+              let poster2 = poster.filter(
+                (v) => {
+                return   v.subCategory.title.toLowerCase() ==
+                  subCategory.toLowerCase()
+                }
+              );
+
+              res
+                .status(200)
+                .json({ message: "succesfully loaded", posterData: poster2 });
+            } catch (e) {}
           }
         })
         .catch((err) => {
-          res.status(400).json({ error: `${err}` });
+          res.json({ error: `${err}` });
         });
     } catch (err) {
-      res.status(400).json({ error: `${err}` });
+      res.json({ error: `${err}` });
     }
   } catch (err) {
-    res.status(400).json({ error: `${err}` });
+    res.json({ error: `${err}` });
   }
 };
+
 
 exports.getPoster = (req, res, next) => {
   posterDb
@@ -162,25 +172,18 @@ exports.updatePoster = async (req, res, next) => {
           req.file.destination + req.file.filename
         }`)
       : null;
-  } catch (e) { }
-  
+  } catch (e) {}
   payload.priceGroup ? (updateObj.priceGroup = payload.priceGroup) : null;
   payload.description ? (updateObj.description = payload.description) : null;
-  payload.originalPrice
-    ? (updateObj.originalPrice = payload.originalPrice)
-    : null;
-  payload.discountPercentage
-    ? (updateObj.discountPercentage = payload.discountPercentage)
-    : null;
+  payload.originalPrice ? (updateObj.originalPrice = payload.originalPrice) : null;
+  payload.discountPercentage ? (updateObj.discountPercentage = payload.discountPercentage): null;
   payload.stocks ? (updateObj.stocks = payload.stocks) : null;
   payload.material ? (updateObj.material = payload.material) : null;
   payload.dimension ? (updateObj.dimension = payload.dimension) : null;
   payload.tags ? (updateObj.tags = payload.tags) : null;
   payload.sku ? (updateObj.sku = payload.sku) : null;
   payload.weight ? (updateObj.weight = payload.weight) : null;
-  payload.additionalDetails
-    ? (updateObj.additionalDetails = payload.additionalDetails)
-    : null;
+  payload.additionalDetails ? (updateObj.additionalDetails = payload.additionalDetails) : null;
   payload.sale ? (updateObj.sale = payload.sale) : null;
 
   try {

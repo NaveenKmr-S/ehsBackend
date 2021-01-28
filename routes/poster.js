@@ -14,9 +14,9 @@ router.get(
   posterControl.getPosterBySubCategory
 );
 
-router.post('/createPoster', storageUrl.single("imgUrl"), posterControl.createPoster);
+router.post('/createPoster',storageUrl.single("imgUrl"),  posterControl.createPoster);
 
-router.post('/updatePoster', storageUrl.single("imgUrl"), posterControl.updatePoster);
+router.post('/updatePoster',storageUrl.single("imgUrl"),  posterControl.updatePoster);
 
 router.post('/deletePoster', posterControl.deletePoster);
 

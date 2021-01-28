@@ -30,42 +30,46 @@ const userschema = mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
     orders: {
       type: [
         {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Orders"
-        }
-      ]
+          ref: "Orders",
+        },
+      ],
     },
     wishList: {
       type: [
         {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "PosterModel"
-        }
-      ]
+          ref: "PosterModel",
+        },
+      ],
     },
     cart: {
       type: [
         {
-          itemDetails:{
+          itemDetails: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "PosterModel"
+            ref: "PosterModel",
           },
           material: {
-              type: String
+            type: String,
           },
-          dimension:{
-              type: String
+          dimension: {
+            type: String,
           },
           quantity: {
-              type: Number
+            type: Number,
           },
           total: {
-              type: String
-          }
-        }
+            type: String,
+          },
+        },
       ],
     },
   },
@@ -74,7 +78,8 @@ const userschema = mongoose.Schema(
 
 userschema.pre("save", function (next) {
   const user = this;
-  if (!user.isModified || !user.isNew) {   // don't rehash if it's an old user
+  if (!user.isModified || !user.isNew) {
+    // don't rehash if it's an old user
     next();
   } else {
     console.log("user ,pre saving " + user.emailid);
