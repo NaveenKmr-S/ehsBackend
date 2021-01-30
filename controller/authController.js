@@ -263,48 +263,6 @@ exports.activateAccount = (req, res, next) => {
   } catch (e) {}
 };
 
-// exports.login = (req, res, next) => {
-//   const { emailid, password } = req.body;
-//   userDb
-//     .findOne({ emailid: emailid, isActive: true })
-//     .populate("cart.itemDetails", "_id name imgUrl originalPrice")
-//     .then((userRes) => {
-//       if (!userRes) {
-//         res.json({ message: "user not found!!!" });
-//       } else {
-//         bcrypt.compare(password, userRes.password, (err, isSame) => {
-//           if (!isSame) {
-//             res.json({ message: "Password doesn't match!!!" });
-//           } else {
-//             const token = jwt.sign(
-//               { emailid: userRes.emailid, userid: userRes._id },
-//               `${process.env.SECRET}` || "NaveenKmrBala",
-//               { expiresIn: 86400 }
-//             );
-
-//             res.status(200).json({
-//               message: "Logged in successfully!!!",
-//               token: token,
-//               user: {
-//                 userid: userRes.userid,
-//                 firstname: userRes.firstname,
-//                 lastname: userRes.lastname,
-//                 emailid: userRes.emailid,
-//                 cart: userRes.cart,
-//                 phonenumber: userRes.phonenumber,
-//                 address: userRes.address,
-//                 orders: userRes.orders,
-//               },
-//             });
-//           }
-//         });
-//       }
-//     })
-//     .catch((err) => {
-//       res.status(400).json({ error: `${err}` });
-//     });
-// };
-
 exports.login = (req, res, next) => {
   const { emailid, password, phonenumber } = req.body;
 

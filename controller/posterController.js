@@ -18,6 +18,7 @@ exports.createPoster = async (req, res, next) => {
     dimension,
     tags,
     sku,
+    link,
     weight,
     additionalDetails,
     sale,
@@ -46,6 +47,7 @@ exports.createPoster = async (req, res, next) => {
     dimension,
     tags,
     sku,
+    link,
     weight,
     additionalDetails,
     sale,
@@ -182,6 +184,7 @@ exports.updatePoster = async (req, res, next) => {
   payload.dimension ? (updateObj.dimension = payload.dimension) : null;
   payload.tags ? (updateObj.tags = payload.tags) : null;
   payload.sku ? (updateObj.sku = payload.sku) : null;
+  payload.link ? (updateObj.link = payload.link) : null;
   payload.weight ? (updateObj.weight = payload.weight) : null;
   payload.additionalDetails ? (updateObj.additionalDetails = payload.additionalDetails) : null;
   payload.sale ? (updateObj.sale = payload.sale) : null;

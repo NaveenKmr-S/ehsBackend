@@ -90,6 +90,9 @@ const posterModel = new schema(
     tags: {
       type: String,
     },
+    link: {
+      type: String,
+    },
     sku: {
       type: String,
     },

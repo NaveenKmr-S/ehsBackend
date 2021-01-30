@@ -26,6 +26,9 @@ const ordersModel = new schema(
           originalPrice: {
             type: String,
           },
+          link: {
+            type: String,
+          },
           quantity: {
             type: Number,
           },
