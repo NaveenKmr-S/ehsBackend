@@ -19,11 +19,17 @@ exports.getSubCategory = (req, res, next) => {
 };
 
 exports.createSubCategory = async (req, res, next) => {
-  const { title, categoryId } = req.body;
+  let { title, categoryId } = req.body;
+  let imgUrl;
+  try {
+    imgUrl = `${req.protocol}://${req.get("host")}/${
+      req.file.destination + req.file.filename
+    }`;
+  } catch (e) {}
   if (!title) res.status(400).json({ error: titleErr });
   else if (!categoryId) res.status(400).json({ error: categoryIdErr });
   else {
-    const newSubCategory = await new subCategoryDb({ title, categoryId });
+    const newSubCategory = await new subCategoryDb({ title,imgUrl, categoryId });
     newSubCategory
       .save()
       .then((subCategory) => {
@@ -47,6 +53,13 @@ exports.updateSubCategory = async (req, res, next) => {
     let updateObj = {};
 
     payload.title ? (updateObj.title = payload.title) : null;
+    try {
+      req.file.path
+        ? (updateObj.imgUrl = `${req.protocol}://${req.get("host")}/${
+            req.file.destination + req.file.filename
+          }`)
+        : null;
+    } catch (e) {}
 
     try {
       let result = await subCategoryDb

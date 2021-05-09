@@ -1,13 +1,11 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const jwt = require("jsonwebtoken");
 
 const userschema = mongoose.Schema(
   {
-    firstname: {
-      type: String,
-    },
-    lastname: {
+    name: {
       type: String,
     },
     emailid: {
@@ -72,17 +70,35 @@ const userschema = mongoose.Schema(
         },
       ],
     },
+    tokens: [{
+      token: {
+        type: String,
+        required: true
+      }
+    }]
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
 
+userschema.methods.generateAuthToken = async function(){
+  try{
+    const token  = jwt.sign({_id:this._id.toString()},process.env.SECRET, {expiresIn : 3600000});
+    this.tokens = this.tokens.concat({token});
+    await this.save();
+    return token;
+  }catch(err){
+    res.send(err);
+  }
+};
+
 userschema.pre("save", function (next) {
   const user = this;
-  if (!user.isModified || !user.isNew) {
+  if (!user.isModified ) {
     // don't rehash if it's an old user
     next();
   } else {
-    console.log("user ,pre saving " + user.emailid);
+    if(user.password.isModified){
+      console.log("user ,pre saving " + user.emailid, user.phonenumber, user.password);
     bcrypt.hash(user.password, saltRounds, (err, hash) => {
       if (err) {
         console.log("Error hashing password for user", user.emailid);
@@ -92,6 +108,7 @@ userschema.pre("save", function (next) {
         next();
       }
     });
+    }
   }
 });
 

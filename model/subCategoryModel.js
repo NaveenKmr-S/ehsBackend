@@ -6,6 +6,9 @@ const subcategoryModel = new schema({
     title:{
         type: String
     },
+    imgUrl: {
+      type: String,
+    },
     categoryId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "category",  

@@ -7,6 +7,8 @@ const router = express.Router();
 
 router.get('/getCategory', verifyJwt, categoryController.getCategory);
 
+router.get('/getCategory/:categoryId', categoryController.getCategoryById); 
+
 router.post('/createCategory', categoryController.createCategory);
 
 router.post('/updateCategory', categoryController.updateCategory);

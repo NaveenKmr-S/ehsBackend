@@ -9,10 +9,7 @@ router.get('/getPoster', verifyJwt, posterControl.getPoster);
 
 router.get('/getPosterById/:posterId', verifyJwt, posterControl.getPosterById);
 
-router.get(
-  "/getPosterBySubCategory/:subCategory",
-  posterControl.getPosterBySubCategory
-);
+router.get("/getPosterBySubCategory/:subCategory",posterControl.getPosterBySubCategory);
 
 router.post('/createPoster',storageUrl.single("imgUrl"),  posterControl.createPoster);
 

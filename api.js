@@ -12,11 +12,13 @@ const cors = require("cors");
 const helmet = require("helmet");
 const shortid = require("shortid");
 const Razorpay = require("razorpay");
-
+const cookieParser = require("cookie-parser");
 const app = express();
 
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
+
+app.use(cookieParser());
 
 app.use(cors());
 app.use(helmet());
@@ -85,10 +87,7 @@ app.use("/assets/uploads", express.static(__dirname + "/assets/uploads"));
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "x-www-form-urlencoded, Origin, X-Requested-With, Content-Type, Accept, Authorization, *"
-  );
+  res.header("Access-Control-Allow-Headers", "x-www-form-urlencoded, Origin, X-Requested-With, Content-Type, Accept, Authorization, *");
   if (req.method === "OPTIONS") {
     res.header(
       "Access-Control-Allow-Methods",
@@ -99,7 +98,7 @@ app.use((req, res, next) => {
   }
   next();
 });
-
+  
 app.use("/posters", poster);
 app.use("/material", material);
 app.use("/category", category);
@@ -116,16 +115,18 @@ app.get("/", (req, res) => {
 
 mongoose
   .connect(
-    "mongodb+srv://Naveen:ehs@cluster0.6g1vh.mongodb.net/ehsdb?retryWrites=true&w=majority",
+    "mongodb://localhost:27017/ehsdb",
     //     "mongodb+srv://balu:mongopassword@cluster0.6ujrr.mongodb.net/example?retryWrites=true&w=majority"
     // ,
     { useNewUrlParser: true, useUnifiedTopology: true }
   )
   .then(() => {
-    app.listen(process.env.PORT || 8080, () =>
-      console.log("Server started!!!")
-    );
+   console.log("DB Connected!!!")
   })
   .catch((err) => {
     console.log(err);
   });
+
+  app.listen(process.env.PORT || 8080, () =>
+  console.log("Server started!!!")
+);
