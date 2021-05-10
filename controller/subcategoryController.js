@@ -1,89 +1,66 @@
 const subCategoryDb = require("../model/subCategoryModel");
-
-const idErr = "Provide subCategory id!!!",
-  titleErr = "Provide title!!!",
-  categoryIdErr = "Provide category id!!!",
-  sucLoad = "succesfully loaded",
-  sucCreated = "sucesfully created",
-  delSuc = "deleted Successfully!!!";
+const commonFunction = require("../common/common")
+const mongoose = require("mongoose");
 
 exports.getSubCategory = (req, res, next) => {
-  subCategoryDb
-    .find({ isActive: true })
-    .then((subCategory) => {
-      res.status(200).json({ subCategory: subCategory, message: "successfully Loaded" });
-    })
-    .catch((err) => {
-      res.status(400).json({ error: `${err}` });
-    });
-};
-
-exports.createSubCategory = async (req, res, next) => {
-  let { title, categoryId } = req.body;
-  let imgUrl;
-  try {
-    imgUrl = `${req.protocol}://${req.get("host")}/${
-      req.file.destination + req.file.filename
-    }`;
-  } catch (e) {}
-  if (!title) res.status(400).json({ error: titleErr });
-  else if (!categoryId) res.status(400).json({ error: categoryIdErr });
-  else {
-    const newSubCategory = await new subCategoryDb({ title,imgUrl, categoryId });
-    newSubCategory
-      .save()
-      .then((subCategory) => {
-        res.status(200).json({
-          message: sucCreated,
-          subCategory: subCategory,
-        });
-      })
-      .catch((err) => {
-        res.status(400).json({ error: `${err}` });
-      });
-  }
-};
-
-exports.updateSubCategory = async (req, res, next) => {
-  const payload = req.body;
-  const subCategoryId = payload.subCategoryId;
-
-  if (!subCategoryId) res.status(400).json({ error: idErr });
-  else {
-    let updateObj = {};
-
-    payload.title ? (updateObj.title = payload.title) : null;
     try {
-      req.file.path
-        ? (updateObj.imgUrl = `${req.protocol}://${req.get("host")}/${
-            req.file.destination + req.file.filename
-          }`)
-        : null;
-    } catch (e) {}
+        let payload = req.query
+        let skip = parseInt(payload.skip) || 0;
+        let limit = parseInt(payload.limit) || 30;
 
-    try {
-      let result = await subCategoryDb
-        .updateOne({ _id: subCategoryId }, updateObj)
-        .exec();
-      res.json({ updated: true, update: updateObj });
+        let findCriteria = {
+            isActive: 1
+        }
+        payload.categoryId ? findCriteria.categoryId = mongoose.Schema.Types.ObjectId(payload.categoryId) : ""
+        let result = await subCategoryDb.find(findCriteria).skip(skip).limit(limit)
+        commonFunction.actionCompleteResponse(res, result)
+
     } catch (err) {
-      res.status(400).json({ updated: false, error: `${err}` });
+        commonFunction.sendActionFailedResponse(res, null, err.message)
     }
-  }
+
 };
 
-exports.deleteSubCategory = async (req, res, next) => {
-  const { subCategoryId } = req.body;
-
-  if (!subCategoryId) res.status(400).json({ error: idErr });
-  else {
+exports.createSubCategory = async(req, res, next) => {
     try {
-      let result = await subCategoryDb
-        .updateOne({ _id: subCategoryId }, { isActive: false })
-        .exec();
-      res.json({ deleted: true, message: delSuc });
+        let payload = req.body;
+        let title = payload.title;
+        let sub_cat_slug = commonFunction.autoCreateSlug(title);
+        let imgUrl = payload.imgUrl
+        let categoryId = payload.categoryId;
+        let insertObj = {
+            title,
+            sub_cat_slug,
+            imgUrl,
+            categoryId
+        }
+        let result = await new subCategoryDb(insertObj).save();
+        commonFunction.actionCompleteResponse(res, result)
+
     } catch (err) {
-      res.status(400).json({ deleted: false, error: `${err}` });
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+
     }
-  }
+};
+
+exports.updateSubCategory = async(req, res, next) => {
+    try {
+        let payload = req.body;
+        let sub_cat_obj_id = payload.sub_cat_obj_id;
+        let updateObj = {};
+        if (payload.title) {
+            updateObj.title = payload.title;
+            updateObj.sub_cat_slug = commonFunction.autoCreateSlug(updateObj.title);
+        }
+        payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
+        payload.categoryId ? updateObj.categoryId = payload.categoryId : ""
+        payload.isActive == 0 || updateObj.isActive ? updateObj.isActive = payload.isActive : ""
+        if (!sub_cat_obj_id) {
+            throw new Error("Sub Cat obj not found")
+        }
+        let result = await subCategoryDb.findOneAndUpdate({ _id: sub_cat_obj_id }, updateObj, { new: true })
+        commonFunction.actionCompleteResponse(res, result)
+    } catch (err) {
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+    }
 };

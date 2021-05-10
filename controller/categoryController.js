@@ -1,88 +1,106 @@
 const categoryDb = require("../model/categoryModel");
+const commonFunction = require("../common/common")
 
 const delSuc = "deleted Successfully!!!",
-  idErr = "Provide category id!!!",
-  titleErr = "Provide title!!!",
-  sucLoad = "succesfully loaded",
-  sucCreated = "sucesfully created";
+    idErr = "Provide category id!!!",
+    titleErr = "Provide title!!!",
+    sucLoad = "succesfully loaded",
+    sucCreated = "sucesfully created";
 
-exports.getCategory = (req, res, next) => {
-  
-  categoryDb
-    .find({ isActive: true })
-    .populate("subCategory")
-    .then((category) => {
-      res.status(200).json({ category: category, message: sucLoad });
-    })
-    .catch((err) => {
-      res.status(400).json({ error: `${err}` });
-    });
-};
-
-exports.getCategoryById = (req, res, next) => {
-  let category = req.params.categoryId;
-  
-  categoryDb
-    .find({_id: category, isActive: true })
-    .populate("subCategory")
-    .then((category) => {
-      res.status(200).json({ category: category, message: sucLoad });
-    })
-    .catch((err) => {
-      res.status(400).json({ error: `${err}` });
-    });
-};
- 
-exports.createCategory = async (req, res, next) => {
-  const { title } = req.body;
-  if (!title) res.status(400).json({ error: titleErr });
-  else {
-    const newCategory = await new categoryDb({ title });
-    newCategory
-      .save()
-      .then((category) => {
-        res.status(200).json({
-          message: sucCreated,
-          category: category,
-        });
-      })
-      .catch((err) => {
-        res.status(400).json({ error: `${err}` });
-      });
-  }
-};
-
-exports.updateCategory = async (req, res, next) => {
-  const payload = req.body;
-  const categoryId = payload.categoryId;
-  if (!categoryId) {
-    res.status(400).json({ error: idErr });
-  } else {
-    let updateObj = {};
-    payload.title ? (updateObj.title = payload.title) : null;
-    payload.subCategory ? (updateObj.subCategory = payload.subCategory) : null;
+exports.getCategory = async(req, res, next) => {
     try {
-      let result = await categoryDb
-        .updateOne({ _id: categoryId }, updateObj)
-        .exec();
-      res.json({ updated: true, update: updateObj });
+        let payload = req.query
+        let skip = parseInt(payload.skip) || 0;
+        let limit = parseInt(payload.limit) || 30;
+
+        let findCriteria = {
+            isActive: 1
+        }
+        payload.cat_slug ? findCriteria.cat_slug = payload.cat_slug : ""
+        let result = await categoryDb.find(findCriteria).skip(skip).limit(limit)
+        commonFunction.actionCompleteResponse(res, result)
+
     } catch (err) {
-      res.status(400).json({ updated: false, error: `${err}` });
+        commonFunction.sendActionFailedResponse(res, null, err.message)
     }
-  }
 };
 
-exports.deleteCategory = async (req, res, next) => {
-  const { categoryId } = req.body;
-  if (!categoryId) res.status(400).json({ error: idErr });
-  else {
+exports.getCategoryById = async(req, res, next) => {
     try {
-      let result = await categoryDb
-        .updateOne({ _id: categoryId }, { isActive: false })
-        .exec();
-      res.json({ deleted: true, message: delSuc });
+        let payload = req.query
+        let criteria = { isActive: 1 }
+        payload.cat_obj_id ? criteria.cat_obj_id = payload.cat_obj_id : ""
+        let agg = [{
+                '$match': criteria
+            },
+            {
+                $lookup: {
+                    from: "subcategories",
+                    let: { workflowId: "$_id", isActiveCheck: 1 },
+                    pipeline: [{
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ["$categoryId", "$$workflowId"] },
+                                    { $eq: ["$isActive", "$$isActiveCheck"] }
+                                ]
+                            }
+                        }
+                    }, ],
+                    as: "sub_category"
+                }
+            }
+        ]
+        let result = await categoryDb.aggregate(agg)
+
+        commonFunction.actionCompleteResponse(res, result)
+
     } catch (err) {
-      res.status(400).json({deleted: false, error: `${err}` });
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+
     }
-  }
+
+};
+
+exports.createCategory = async(req, res, next) => {
+    try {
+        let payload = req.body;
+        let title = payload.title;
+        let cat_slug = commonFunction.autoCreateSlug(title);
+        let imgUrl = payload.imgUrl
+
+        let insertObj = {
+            title,
+            cat_slug,
+            imgUrl,
+
+        }
+        let result = await new categoryDb(insertObj).save();
+        commonFunction.actionCompleteResponse(res, result)
+
+    } catch (err) {
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+
+    }
+};
+
+exports.updateCategory = async(req, res, next) => {
+    try {
+        let payload = req.body;
+        let cat_obj_id = payload.cat_obj_id;
+        let updateObj = {};
+        if (payload.title) {
+            updateObj.title = payload.title;
+            updateObj.cat_slug = commonFunction.autoCreateSlug(updateObj.title);
+        }
+        payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
+        payload.isActive == 0 || updateObj.isActive ? updateObj.isActive = payload.isActive : ""
+        if (!cat_obj_id) {
+            throw new Error("Sub Cat obj not found")
+        }
+        let result = await categoryDb.findOneAndUpdate({ _id: cat_obj_id }, updateObj, { new: true })
+        commonFunction.actionCompleteResponse(res, result)
+    } catch (err) {
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+    }
 };
