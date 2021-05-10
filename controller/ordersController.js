@@ -111,8 +111,8 @@ exports.createOrders = async (req, res, next) => {
         to: "naveen29121999@gmail.com",
         // to: "sales@ehsprints.com",
         subject: "Order Placed",
-        html: `<div><p>Order Placed By: ${
-          order?.emailid || order?.phonenumber
+        html: `<div><p>Order Placed By: ${order.emailid
+         // order?.emailid || order?.phonenumber
         } on ${order.created_at}</p><br/><p>Order id: ${
           order.orderId
         }</p><br/><p>Payment id: ${order.paymentId}</p><br/><p>Address: ${

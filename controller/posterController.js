@@ -1,4 +1,5 @@
 const posterDb = require("../model/posterModel");
+const subCategoryDb = require("../model/subCategoryModel");
 const base64_encode = require("../helpers/base64");
 const fs = require("fs");
 
@@ -22,6 +23,7 @@ exports.createPoster = async (req, res, next) => {
     weight,
     additionalDetails,
     sale,
+    bought,
   } = req.body;
 
   // const imageAsBase64 = base64_encode(req.file.path);
@@ -51,6 +53,7 @@ exports.createPoster = async (req, res, next) => {
     weight,
     additionalDetails,
     sale,
+    bought,
   });
 
   newPoster
@@ -98,10 +101,13 @@ exports.getPosterById = (req, res, next) => {
   }
 };
 
-
 exports.getPosterBySubCategory = (req, res, next) => {
   try {
     let subCategory = req.params.subCategory;
+    subCategoryDb.findById({_id: subCategory}).then((subCat)=>{
+      subCategory=subCat.title;
+    });
+   
     try {
     
       posterDb
@@ -114,16 +120,12 @@ exports.getPosterBySubCategory = (req, res, next) => {
           if (!poster) res.status(404).json({ message: "poster not found!!!" });
           else {
             try {
-              let poster2 = poster.filter(
-                (v) => {
-                return   v.subCategory.title.toLowerCase() ==
-                  subCategory.toLowerCase()
-                }
-              );
 
+              let poster2 = poster.filter((v) =>(v.subCategory.title.toLowerCase() == subCategory.toLowerCase()));
               res
                 .status(200)
                 .json({ message: "succesfully loaded", posterData: poster2 });
+                
             } catch (e) {}
           }
         })
@@ -137,7 +139,6 @@ exports.getPosterBySubCategory = (req, res, next) => {
     res.json({ error: `${err}` });
   }
 };
-
 
 exports.getPoster = (req, res, next) => {
   posterDb
@@ -190,9 +191,9 @@ exports.updatePoster = async (req, res, next) => {
   payload.sale ? (updateObj.sale = payload.sale) : null;
 
   try {
-    console.log(updateObj);
+    //console.log(updateObj);
     let result = await posterDb
-      .update({ _id: posterId }, updateObj, { multi: false })
+      .updateOne({ _id: posterId }, updateObj, { multi: false })
       .exec();
     res.json({ updated: true, update: updateObj });
   } catch (err) {

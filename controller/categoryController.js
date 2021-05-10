@@ -7,6 +7,7 @@ const delSuc = "deleted Successfully!!!",
   sucCreated = "sucesfully created";
 
 exports.getCategory = (req, res, next) => {
+  
   categoryDb
     .find({ isActive: true })
     .populate("subCategory")
@@ -18,6 +19,20 @@ exports.getCategory = (req, res, next) => {
     });
 };
 
+exports.getCategoryById = (req, res, next) => {
+  let category = req.params.categoryId;
+  
+  categoryDb
+    .find({_id: category, isActive: true })
+    .populate("subCategory")
+    .then((category) => {
+      res.status(200).json({ category: category, message: sucLoad });
+    })
+    .catch((err) => {
+      res.status(400).json({ error: `${err}` });
+    });
+};
+ 
 exports.createCategory = async (req, res, next) => {
   const { title } = req.body;
   if (!title) res.status(400).json({ error: titleErr });
