@@ -76,7 +76,7 @@ exports.createCategory = async(req, res, next) => {
             isActive: 1,
             cat_slug
         }
-        let ifCatFound = await categoryDb.find(findCriteria).skip(skip).limit(limit)
+        let ifCatFound = await categoryDb.find(findCriteria)
         if (ifcatFound && Array.isArray(ifCatFound) && ifCatFound.length) {
             throw new Error("Category already exists with this name")
         }
@@ -102,7 +102,7 @@ exports.updateCategory = async(req, res, next) => {
                 isActive: 1,
                 cat_slug: updateObj.cat_slug
             }
-            let ifCatFound = await categoryDb.find(findCriteria).skip(skip).limit(limit)
+            let ifCatFound = await categoryDb.find(findCriteria)
             if (ifcatFound && Array.isArray(ifCatFound) && ifCatFound.length) {
                 throw new Error("Category already exists with this name , Update Failed")
             }

@@ -40,7 +40,7 @@ exports.createSubCategory = async(req, res, next) => {
             isActive: 1,
             sub_cat_slug,
         }
-        let ifSubCatFound = await subCategoryDb.find(findCriteria).skip(skip).limit(limit)
+        let ifSubCatFound = await subCategoryDb.find(findCriteria)
         if (ifSubCatFound && Array.isArray(ifSubCatFound) && ifSubCatFound.length) {
             throw new Error("Sub Category already exists with this name")
         }
@@ -65,7 +65,7 @@ exports.updateSubCategory = async(req, res, next) => {
                 isActive: 1,
                 sub_cat_slug: updateObj.sub_cat_slug,
             }
-            let ifSubCatFound = await subCategoryDb.find(findCriteria).skip(skip).limit(limit)
+            let ifSubCatFound = await subCategoryDb.find(findCriteria)
             if (ifSubCatFound && Array.isArray(ifSubCatFound) && ifSubCatFound.length) {
                 throw new Error("Sub Category already exists with this name , Cannot Update")
             }
