@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const commonFunction = require("../common/common")
 
 const schema = mongoose.Schema;
 
@@ -16,14 +17,15 @@ const posterModel = new schema({
         ref: "subcategory",
     }],
     language: {
-        type: String,
+        type: Number,
+        default: commonFunction.languagesPoster.ENGLISH
     },
     creator: {
         type: String,
     },
-    imgUrl: {
+    imgUrl: [{
         type: String,
-    },
+    }],
     description: {
         type: String,
     },
@@ -65,7 +67,7 @@ const posterModel = new schema({
         type: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "MaterialDimension",
-        }, ],
+        }],
     },
     tags: [{
         type: String,
