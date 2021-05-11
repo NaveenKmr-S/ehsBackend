@@ -5,7 +5,7 @@ const storageImg = require("../helpers/storageImg");
 const comonRespnses = require("../common/common")
 
 
-exports.getMaterial = (req, res, next) => {
+exports.getMaterial = async(req, res, next) => {
     try {
         let result = await materialDimensionDb.find({ isActive: 1 })
         comonRespnses.actionCompleteResponse(res, result)

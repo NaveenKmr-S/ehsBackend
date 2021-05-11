@@ -16,6 +16,9 @@ const subcategoryModel = new schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "category",
     },
+    discountPercentage: {
+        type: String,
+    },
     isActive: {
         type: Number,
         default: 1,

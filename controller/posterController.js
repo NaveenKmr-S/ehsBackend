@@ -1,214 +1,236 @@
 const posterDb = require("../model/posterModel");
 const subCategoryDb = require("../model/subCategoryModel");
+const categoryDb = require("../model/categoryModel");
 const base64_encode = require("../helpers/base64");
 const fs = require("fs");
+const commonFunction = require("../common/common")
 
-exports.createPoster = async (req, res, next) => {
-  let {
-    name,
-    category,
-    subCategory,
-    language,
-    creator,
-    priceGroup,
-    description,
-    originalPrice,
-    discountPercentage,
-    stocks,
-    material,
-    dimension,
-    tags,
-    sku,
-    link,
-    weight,
-    additionalDetails,
-    sale,
-    bought,
-  } = req.body;
 
-  // const imageAsBase64 = base64_encode(req.file.path);
-  let imgUrl;
-  try {
-    imgUrl = `${req.protocol}://${req.get("host")}/${
-      req.file.destination + req.file.filename
-    }`;
-  } catch (e) {}
-  const newPoster = await new posterDb({
-    name,
-    category,
-    subCategory,
-    language,
-    creator,
-    imgUrl:imgUrl,
-    priceGroup,
-    description,
-    originalPrice,
-    discountPercentage,
-    stocks,
-    material,
-    dimension,
-    tags,
-    sku,
-    link,
-    weight,
-    additionalDetails,
-    sale,
-    bought,
-  });
-
-  newPoster
-    .save()
-    .then((poster) => {
-      // try {
-      //   fs.unlinkSync(req.file.path);
-      // } catch (err) {
-      //   console.error(err);
-      // }
-      res.status(200).json({
-        message: "sucesfully created",
-        poster: poster,
-      });
-    })
-    .catch((err) => {
-      res.status(400).json({ error: `${err}` });
-    });
-};
-
-exports.getPosterById = (req, res, next) => {
-  try {
-    let posterId = req.params.posterId;
+exports.createPoster = async(req, res, next) => {
     try {
-      posterDb
-        .findOne({ _id: posterId, isActive: true })
-        .populate("category", "title")
-        .populate("subCategory", "title")
-        .populate("material", "title imgUrl")
-        .populate("dimension", "title imgUrl")
-        .then((poster) => {
-          if (!poster) res.status(404).json({ message: "poster not found!!!" });
-          res
-            .status(200)
-            .json({ message: "succesfully loaded", posterData: poster });
-        })
-        .catch((err) => {
-          res.status(400).json({ error: `${err}` });
-        });
+        let payload = req.body;
+        let insertObj = {
+            name: payload.name,
+            category: payload.category,
+            subCategory: payload.subCategory,
+            language: payload.language,
+            creator: payload.creator,
+            imgUrl: payload.imgUrl,
+            description: payload.description,
+            discountPercentage: payload.discountPercentage,
+            stocks: payload.stocks,
+            materialDimension: payload.materialDimension,
+            tags: payload.tags,
+            link: payload.link,
+            sku: payload.sku,
+            weight: payload.weight,
+            additionalDetails: payload.additionalDetails,
+            bestSeller: payload.bestSeller,
+
+        };
+        if (!insertObj.name) {
+            throw new Error("Give a proper poster name");
+        }
+        insertObj.slug = commonFunction.autoCreateSlug(insertObj.name)
+        let posterAldreadyFound = await posterDb.find({ slug: insertObj.slug, isActive: 1 }).limit(1).exec()
+        if (posterAldreadyFound && Array.isArray(posterAldreadyFound) && posterAldreadyFound.length) {
+            throw new Error("Poster name already exists")
+        }
+
+        let result = await new posterDb(insertObj).save();
+        commonFunction.actionCompleteResponse(res, result)
+
     } catch (err) {
-      res.status(400).json({ error: `${err}` });
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+
     }
-  } catch (err) {
-    res.status(400).json({ error: `${err}` });
-  }
 };
 
-exports.getPosterBySubCategory = (req, res, next) => {
-  try {
-    let subCategory = req.params.subCategory;
-    subCategoryDb.findById({_id: subCategory}).then((subCat)=>{
-      subCategory=subCat.title;
-    });
-   
+exports.getPosterById = async(req, res, next) => {
     try {
-    
-      posterDb
-        .find({ isActive: true })
-        .populate("category", "title")
-        .populate("subCategory", "title")
-        .populate("material", "title imgUrl")
-        .populate("dimension", "title imgUrl")
-        .then((poster) => {
-          if (!poster) res.status(404).json({ message: "poster not found!!!" });
-          else {
-            try {
+        let payload = req.query;
+        let findCriteria = {
+            isActive: 1
+        }
+        payload.slug ? findCriteria.slug = payload.slug : ""
+        payload.poster_obj_id ? findCriteria.poster_obj_id = payload.poster_obj_id : ""
+        let posterResult = poster.find(findCriteria)
+        let result = posterDb.find(findCriteria)
+            .populate("category")
+            .populate("subCategory")
+            .populate("materialDimension")
+        let parsedPoster = JSON.parse(JSON.stringify(posterResult))
+        let category = parsedPoster.category
 
-              let poster2 = poster.filter((v) =>(v.subCategory.title.toLowerCase() == subCategory.toLowerCase()));
-              res
-                .status(200)
-                .json({ message: "succesfully loaded", posterData: poster2 });
-                
-            } catch (e) {}
-          }
-        })
-        .catch((err) => {
-          res.json({ error: `${err}` });
-        });
+        let findRealtedPosters = {
+            isActive: 1,
+            category: {
+                $in: category
+            }
+        }
+        let relatedProd = posterDb.find(findRealtedPosters).limit(10).exec()
+        let responsetoSend = {
+            posterDetails: result,
+            realtedPosters: relatedProd
+        }
+
+        commonFunction.actionCompleteResponse(res, responsetoSend)
+
     } catch (err) {
-      res.json({ error: `${err}` });
+        commonFunction.sendActionFailedResponse(res, null, err.message)
     }
-  } catch (err) {
-    res.json({ error: `${err}` });
-  }
 };
 
-exports.getPoster = (req, res, next) => {
-  posterDb
-    .find({ isActive: true })
-    .populate("category", "title")
-    .populate("subCategory", "title")
-    .populate("material", "title imgUrl")
-    .populate("dimension", "title imgUrl")
-    .lean()
-    .then((poster) => {
-      res
-        .status(200)
-        .json({ posterData: poster, message: "succesfully loaded" });
-    })
-    .catch((err) => {
-      res.status(400).json({ error: `${err}` });
-    });
+exports.getPosterBySubCategory = async(req, res, next) => {
+    try {
+        let payload = req.query
+        let findCriteria = {
+            isActive: 1
+        }
+        let skip = payload.skip || 0
+        let limit = payload.limit || 20
+        payload.category_slug ? findCriteria.category_slug = payload.category_slug : ""
+        payload.cat_obj_id ? findCriteria.cat_obj_id = payload.cat_obj_id : ""
+        payload.subcategorySlug ? findCriteria.subcategory_slug = payload.subCategorySlug : ""
+        payload.sub_cat_obj_id ? findCriteria.sub_cat_obj_id = payload.sub_cat_obj_id : ""
+        if (findCriteria.category_slug || findCriteria.cat_obj_id) {
+            let catResult = await categoryDb.find(findCriteria).limit(1).exec()
+            if (!(catResult && Array.isArray(catResult) && catResult.length)) {
+                throw new Error("Category Not Found")
+            }
+            let posterFindCriteria = {
+                isActive: 1,
+                category: {
+                    $in: catResult[0]._id
+                }
+            }
+            let postersExists = await posterDb.find(posterFindCriteria).skip(skip).limit(limit)
+            return commonFunction.actionCompleteResponse(res, postersExists)
+
+        } else if (findCriteria.sub_cat_obj_id || findCriteria.subCategorySlug) {
+            let subcatResult = await subCategoryDb.find(findCriteria).limit(1).exec()
+            if (!(subcatResult && Array.isArray(subcatResult) && subcatResult.length)) {
+                throw new Error("sub Category Not Found")
+            }
+            let posterFindCriteria = {
+                isActive: 1,
+                subCategory: {
+                    $in: subcatResult[0]._id
+                }
+            }
+            let postersExists = await posterDb.find(posterFindCriteria).skip(skip).limit(limit)
+            return commonFunction.actionCompleteResponse(res, postersExists)
+
+        } else {
+            throw new Error("Not Data Available, Enter Proper Data")
+        }
+    } catch (err) {
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+
+    }
 };
 
-exports.updatePoster = async (req, res, next) => {
-  let payload = req.body;
-  let posterId = payload.posterId;
+exports.getPoster = async(req, res, next) => {
 
-  let updateObj = {};
+    try {
+        let payload = req.query
+        let findCriteria = {
+            isActive: 1
+        }
+        let skip = payload.skip || 0
+        let limit = payload.limit || 20
+        let result = posterDb.find(findCriteria)
+            .populate("category")
+            .populate("subCategory")
+            .populate("materialDimension").skip(skip).limit(limit)
+        commonFunction.actionCompleteResponse(res, result)
 
-  payload.name ? (updateObj.name = payload.name) : null;
-  payload.category ? (updateObj.category = payload.category) : null;
-  payload.subCategory ? (updateObj.subCategory = payload.subCategory) : null;
-  payload.language ? (updateObj.language = payload.language) : null;
-  payload.creator ? (updateObj.creator = payload.creator) : null;
-  try {
-    req.file.path
-      ? (updateObj.imgUrl = `${req.protocol}://${req.get("host")}/${
-          req.file.destination + req.file.filename
-        }`)
-      : null;
-  } catch (e) {}
-  payload.priceGroup ? (updateObj.priceGroup = payload.priceGroup) : null;
-  payload.description ? (updateObj.description = payload.description) : null;
-  payload.originalPrice ? (updateObj.originalPrice = payload.originalPrice) : null;
-  payload.discountPercentage ? (updateObj.discountPercentage = payload.discountPercentage): null;
-  payload.stocks ? (updateObj.stocks = payload.stocks) : null;
-  payload.material ? (updateObj.material = payload.material) : null;
-  payload.dimension ? (updateObj.dimension = payload.dimension) : null;
-  payload.tags ? (updateObj.tags = payload.tags) : null;
-  payload.sku ? (updateObj.sku = payload.sku) : null;
-  payload.link ? (updateObj.link = payload.link) : null;
-  payload.weight ? (updateObj.weight = payload.weight) : null;
-  payload.additionalDetails ? (updateObj.additionalDetails = payload.additionalDetails) : null;
-  payload.sale ? (updateObj.sale = payload.sale) : null;
+    } catch (err) {
+        commonFunction.sendActionFailedResponse(res, null, err.message)
 
-  try {
-    //console.log(updateObj);
-    let result = await posterDb
-      .updateOne({ _id: posterId }, updateObj, { multi: false })
-      .exec();
-    res.json({ updated: true, update: updateObj });
-  } catch (err) {
-    res.status(400).json({ error: `${err}` });
-  }
+    }
 };
 
-exports.deletePoster = async (req, res, next) => {
-  let { posterId } = req.body;
-  try {
-    let result = await posterDb
-      .update({ _id: posterId }, { isActive: false }, { multi: false })
-      .exec();
-    res.json({ deleted: true, message: "deleted Successfully!!!" });
-  } catch (err) {
-    res.status(400).json({ error: `${err}` });
-  }
+exports.updatePoster = async(req, res, next) => {
+    try {
+        let payload = req.body;
+        let poster_obj_id = payload.poster_obj_id;
+
+        let updateObj = {};
+        if (payload.name) {
+            updateObj.name = payload.name;
+            updateObj.slug = commonFunction.autoCreateSlug(payload.name)
+            let posterAldreadyFound = await posterDb.find({ slug: updateObj.slug, isActive: 1 }).limit(1).exec()
+            if (posterAldreadyFound && Array.isArray(posterAldreadyFound) && posterAldreadyFound.length) {
+                throw new Error("Poster name already exists")
+            }
+        }
+        payload.language ? updateObj.language = payload.language : ""
+        payload.creator ? updateObj.creator = payload.creator : ""
+        payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
+        payload.description ? updateObj.description = payload.description : ""
+        payload.discountPercentage ? updateObj.discountPercentage = payload.discountPercentage : ""
+        payload.stocks ? updateObj.stocks = payload.stocks : ""
+        payload.link ? updateObj.link = payload.link : ""
+        payload.sku ? updateObj.sku = payload.sku : ""
+        payload.weight ? updateObj.weight = payload.weight : ""
+        payload.additionalDetails ? updateObj.additionalDetails = payload.additionalDetails : ""
+        payload.bestSeller == 0 || payload.bestSeller ? updateObj.bestSeller = payload.bestSeller : ""
+        payload.isActive == 0 || payload.isActive ? updateObj.isActive = payload.isActive : ""
+        if (payload.operationType) {
+            switch (payload.operationType) {
+                case commonFunction.operationType.PUSH:
+                    {
+                        payload.category ? updateObj.$addToSet = {...updateObj.$addToSet, category: payload.category } : ""
+                        payload.subCategory ? updateObj.$addToSet = {...updateObj.$addToSet, subCategory: payload.subCategory } : ""
+                        payload.tags ? updateObj.$addToSet = {...updateObj.$addToSet, tags: payload.tags } : ""
+                        payload.materialDimension ? updateObj.$addToSet = {...updateObj.$addToSet, materialDimension: payload.materialDimension } : ""
+                    }
+                    break;
+                case commonFunction.operationType.PULL:
+                    {
+                        payload.category ? updateObj.$pull = {...updateObj.$pull, category: payload.category } : ""
+                        payload.subCategory ? updateObj.$pull = {...updateObj.$pull, subCategory: payload.subCategory } : ""
+                        payload.tags ? updateObj.$pull = {...updateObj.$pull, tags: payload.tags } : ""
+                        payload.materialDimension ? updateObj.$pull = {...updateObj.$pull, materialDimension: payload.materialDimension } : ""
+
+                    }
+                    break;
+                case commonFunction.operationType.REPLACE:
+                    {
+                        payload.category ? updateObj.category = payload.category : ""
+                        payload.subCategory ? updateObj.subCategory = payload.subCategory : ""
+                        payload.tags ? updateObj.tags = payload.tags : ""
+                        payload.materialDimension ? updateObj.materialDimension = payload.materialDimension : ""
+                    }
+                    break;
+                default:
+                    break;
+
+            }
+        }
+        let result = await posterDb.findOneAndUpdate({ _id: poster_obj_id }, updateObj, { new: true })
+        commonFunction.actionCompleteResponse(res, result)
+
+    } catch (err) {
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+
+    }
 };
+
+exports.uploadFile = async(req, res, next) => {
+    try {
+        let imgUrl = `${req.protocol}://${req.get("host")}/${req.file.destination + req.file.filename}`;
+
+        let responseObj = {
+            fileSavedUrl: imgUrl,
+            destination: req.file.destination,
+            fileName: req.file.filename
+        }
+        commonFunction.actionCompleteResponse(res, responseObj)
+
+    } catch (err) {
+        commonFunction.sendActionFailedResponse(res, null, err.message)
+
+    }
+}

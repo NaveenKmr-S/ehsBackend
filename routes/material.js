@@ -5,17 +5,15 @@ const verifyJwt = require("../middleware/jwt");
 
 const router = express.Router();
 
-router.get("/getMaterial", verifyJwt, materialControl.getMaterial);
+router.get("/getMaterial", materialControl.getMaterial);
 
 router.post(
     "/createMaterial",
-    storageUrl.single("imgUrl"),
     materialControl.createMaterial
 );
 
 router.post(
     "/updateMaterial",
-    storageUrl.single("imgUrl"),
     materialControl.updateMaterial
 );
 

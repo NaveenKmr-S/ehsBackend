@@ -2,7 +2,7 @@ const subCategoryDb = require("../model/subCategoryModel");
 const commonFunction = require("../common/common")
 const mongoose = require("mongoose");
 
-exports.getSubCategory = (req, res, next) => {
+exports.getSubCategory = async(req, res, next) => {
     try {
         let payload = req.query
         let skip = parseInt(payload.skip) || 0;
@@ -32,7 +32,17 @@ exports.createSubCategory = async(req, res, next) => {
             title,
             sub_cat_slug,
             imgUrl,
-            categoryId
+            categoryId,
+            discountPercentage: payload.discountPercentage,
+
+        }
+        let findCriteria = {
+            isActive: 1,
+            sub_cat_slug,
+        }
+        let ifSubCatFound = await subCategoryDb.find(findCriteria).skip(skip).limit(limit)
+        if (ifSubCatFound && Array.isArray(ifSubCatFound) && ifSubCatFound.length) {
+            throw new Error("Sub Category already exists with this name")
         }
         let result = await new subCategoryDb(insertObj).save();
         commonFunction.actionCompleteResponse(res, result)
@@ -51,10 +61,20 @@ exports.updateSubCategory = async(req, res, next) => {
         if (payload.title) {
             updateObj.title = payload.title;
             updateObj.sub_cat_slug = commonFunction.autoCreateSlug(updateObj.title);
+            let findCriteria = {
+                isActive: 1,
+                sub_cat_slug: updateObj.sub_cat_slug,
+            }
+            let ifSubCatFound = await subCategoryDb.find(findCriteria).skip(skip).limit(limit)
+            if (ifSubCatFound && Array.isArray(ifSubCatFound) && ifSubCatFound.length) {
+                throw new Error("Sub Category already exists with this name , Cannot Update")
+            }
         }
         payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
         payload.categoryId ? updateObj.categoryId = payload.categoryId : ""
         payload.isActive == 0 || updateObj.isActive ? updateObj.isActive = payload.isActive : ""
+        payload.discountPercentage ? updateObj.discountPercentage = payload.discountPercentage : ""
+
         if (!sub_cat_obj_id) {
             throw new Error("Sub Cat obj not found")
         }

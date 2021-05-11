@@ -1,11 +1,6 @@
 const categoryDb = require("../model/categoryModel");
 const commonFunction = require("../common/common")
 
-const delSuc = "deleted Successfully!!!",
-    idErr = "Provide category id!!!",
-    titleErr = "Provide title!!!",
-    sucLoad = "succesfully loaded",
-    sucCreated = "sucesfully created";
 
 exports.getCategory = async(req, res, next) => {
     try {
@@ -17,6 +12,7 @@ exports.getCategory = async(req, res, next) => {
             isActive: 1
         }
         payload.cat_slug ? findCriteria.cat_slug = payload.cat_slug : ""
+
         let result = await categoryDb.find(findCriteria).skip(skip).limit(limit)
         commonFunction.actionCompleteResponse(res, result)
 
@@ -73,8 +69,17 @@ exports.createCategory = async(req, res, next) => {
             title,
             cat_slug,
             imgUrl,
-
+            discountPercentage: payload.discountPercentage,
         }
+        let findCriteria = {
+            isActive: 1,
+            cat_slug
+        }
+        let ifCatFound = await categoryDb.find(findCriteria).skip(skip).limit(limit)
+        if (ifcatFound && Array.isArray(ifCatFound) && ifCatFound.length) {
+            throw new Error("Category already exists with this name")
+        }
+
         let result = await new categoryDb(insertObj).save();
         commonFunction.actionCompleteResponse(res, result)
 
@@ -92,9 +97,19 @@ exports.updateCategory = async(req, res, next) => {
         if (payload.title) {
             updateObj.title = payload.title;
             updateObj.cat_slug = commonFunction.autoCreateSlug(updateObj.title);
+            let findCriteria = {
+                isActive: 1,
+                cat_slug: updateObj.cat_slug
+            }
+            let ifCatFound = await categoryDb.find(findCriteria).skip(skip).limit(limit)
+            if (ifcatFound && Array.isArray(ifCatFound) && ifCatFound.length) {
+                throw new Error("Category already exists with this name , Update Failed")
+            }
+
         }
         payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
         payload.isActive == 0 || updateObj.isActive ? updateObj.isActive = payload.isActive : ""
+        payload.discountPercentage ? updateObj.discountPercentage = payload.discountPercentage : ""
         if (!cat_obj_id) {
             throw new Error("Sub Cat obj not found")
         }

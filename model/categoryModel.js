@@ -12,6 +12,9 @@ const categoryModel = new schema({
     imgUrl: {
         type: String,
     },
+    discountPercentage: {
+        type: String,
+    },
     isActive: {
         type: Number,
         default: 1,

@@ -41,6 +41,11 @@ exports.autoCreateSlug = function(text) {
     return text;
 }
 
+exports.operationType = {
+    PUSH: 1,
+    PULL: 2,
+    REPLACE: 3
+}
 
 exports.actionCompleteResponse = function(res, data, msg) {
     var response = {

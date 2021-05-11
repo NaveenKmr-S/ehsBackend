@@ -2,115 +2,94 @@ const mongoose = require("mongoose");
 
 const schema = mongoose.Schema;
 
-const posterModel = new schema(
-  {
+const posterModel = new schema({
     name: {
-      type: String,
+        type: String,
     },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "category",
-    },
-    subCategory: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "subcategory",
-    },
+    slug: { type: string },
+    category: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "category",
+    }],
+    subCategory: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "subcategory",
+    }],
     language: {
-      type: String,
+        type: String,
     },
     creator: {
-      type: String,
+        type: String,
     },
     imgUrl: {
-      type: String,
-    },
-    priceGroup: {
-      type: String,
+        type: String,
     },
     description: {
-      type: String,
-    },
-    originalPrice: {
-      type: String,
+        type: String,
     },
     discountPercentage: {
-      type: String,
+        type: String,
     },
     stocks: {
-      type: Number,
+        type: Number,
     },
     rating: {
-      type: [
-        {
-          userId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "user",
-          },
-          rating: {
-            type: String,
-          },
-        },
-      ],
-      default: [],
+        type: [{
+            userId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "user",
+            },
+            rating: {
+                type: String,
+            },
+        }, ],
+        default: [],
     },
     bought: {
-      type: Number,
-      default: 0,
+        type: Number,
+        default: 0,
     },
     reviews: {
-      type: [
-        {
-          userId: {
+        type: [{
+            userId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "user",
+            },
+            feedback: {
+                type: String,
+            },
+        }, ],
+        default: [],
+    },
+    materialDimension: {
+        type: [{
             type: mongoose.Schema.Types.ObjectId,
-            ref: "user",
-          },
-          feedback: {
-            type: String,
-          },
-        },
-      ],
-      default: [],
+            ref: "MaterialDimension",
+        }, ],
     },
-    material: {
-      type: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "MaterialDimension",
-        },
-      ],
-    },
-    dimension: {
-      type: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "MaterialDimension",
-        },
-      ],
-    },
-    tags: {
-      type: String,
-    },
+    tags: [{
+        type: String,
+    }],
     link: {
-      type: String,
+        type: String,
     },
     sku: {
-      type: String,
+        type: String,
     },
     weight: {
-      type: String,
+        type: String,
     },
     additionalDetails: {
-      type: String,
+        type: String,
     },
-    sale: {
-      type: String,
+    bestSeller: {
+        type: Number,
+        default: 0
     },
     isActive: {
-      type: Boolean,
-      default: true,
+        type: Number,
+        default: 1,
     },
-  },
-  { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
-);
+}, { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } });
 
 module.exports = mongoose.model("PosterModel", posterModel);
