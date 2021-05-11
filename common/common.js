@@ -18,6 +18,12 @@ let responseFlags = {
 
 };
 
+exports.languagesPoster = {
+    ENGLISH: 1,
+    HINDI: 2,
+    BILINGUAL: 3
+}
+
 exports.autoCreateSlug = function(text) {
     text = "" + text // toString
     text = text.replace(/[^a-zA-Z ]/g, ""); // replace all special char 

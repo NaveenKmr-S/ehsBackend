@@ -55,7 +55,7 @@ exports.getPosterById = async(req, res, next) => {
         payload.slug ? findCriteria.slug = payload.slug : ""
         payload.poster_obj_id ? findCriteria.poster_obj_id = payload.poster_obj_id : ""
         let posterResult = poster.find(findCriteria)
-        let result = posterDb.find(findCriteria)
+        let result = await posterDb.find(findCriteria)
             .populate("category")
             .populate("subCategory")
             .populate("materialDimension")
@@ -68,10 +68,16 @@ exports.getPosterById = async(req, res, next) => {
                 $in: category
             }
         }
-        let relatedProd = posterDb.find(findRealtedPosters).limit(10).exec()
+        let relatedProd = await posterDb.find(findRealtedPosters).limit(10).exec()
+        let bestSellerFindCriteria = {
+            isActive: 1,
+            bestSeller: 1
+        }
+        let bestSellarposter = await posterDb.find(bestSellerFindCriteria).limit(10).exec()
         let responsetoSend = {
             posterDetails: result,
-            realtedPosters: relatedProd
+            realtedPosters: relatedProd,
+            youMayAlsoLike: bestSellarposter
         }
 
         commonFunction.actionCompleteResponse(res, responsetoSend)
@@ -139,7 +145,7 @@ exports.getPoster = async(req, res, next) => {
         }
         let skip = payload.skip || 0
         let limit = payload.limit || 20
-        let result = posterDb.find(findCriteria)
+        let result = await posterDb.find(findCriteria)
             .populate("category")
             .populate("subCategory")
             .populate("materialDimension").skip(skip).limit(limit)
@@ -185,6 +191,7 @@ exports.updatePoster = async(req, res, next) => {
                         payload.subCategory ? updateObj.$addToSet = {...updateObj.$addToSet, subCategory: payload.subCategory } : ""
                         payload.tags ? updateObj.$addToSet = {...updateObj.$addToSet, tags: payload.tags } : ""
                         payload.materialDimension ? updateObj.$addToSet = {...updateObj.$addToSet, materialDimension: payload.materialDimension } : ""
+                        payload.imgUrl ? updateObj.$addToSet = {...updateObj.$addToSet, imgUrl: payload.imgUrl } : ""
                     }
                     break;
                 case commonFunction.operationType.PULL:
@@ -193,7 +200,7 @@ exports.updatePoster = async(req, res, next) => {
                         payload.subCategory ? updateObj.$pull = {...updateObj.$pull, subCategory: payload.subCategory } : ""
                         payload.tags ? updateObj.$pull = {...updateObj.$pull, tags: payload.tags } : ""
                         payload.materialDimension ? updateObj.$pull = {...updateObj.$pull, materialDimension: payload.materialDimension } : ""
-
+                        payload.imgUrl ? updateObj.$pull = {...updateObj.$pull, imgUrl: payload.imgUrl } : ""
                     }
                     break;
                 case commonFunction.operationType.REPLACE:
@@ -202,6 +209,7 @@ exports.updatePoster = async(req, res, next) => {
                         payload.subCategory ? updateObj.subCategory = payload.subCategory : ""
                         payload.tags ? updateObj.tags = payload.tags : ""
                         payload.materialDimension ? updateObj.materialDimension = payload.materialDimension : ""
+                        payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
                     }
                     break;
                 default:
