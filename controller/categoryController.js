@@ -26,6 +26,7 @@ exports.getCategoryById = async(req, res, next) => {
         let payload = req.query
         let criteria = { isActive: 1 }
         payload.cat_obj_id ? criteria.cat_obj_id = payload.cat_obj_id : ""
+        payload.cat_slug ? criteria.cat_slug = payload.cat_slug : ""
         let agg = [{
                 '$match': criteria
             },
