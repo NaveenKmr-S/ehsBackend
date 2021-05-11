@@ -7,7 +7,7 @@ const posterModel = new schema({
     name: {
         type: String,
     },
-    slug: { type: string },
+    slug: { type: String },
     category: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "category",
