@@ -3,21 +3,22 @@ const mongoose = require("mongoose");
 const schema = mongoose.Schema;
 
 const categoryModel = new schema({
-    title:{
+    title: {
         type: String
     },
-    subCategory: {
-        type: [
-            {
-              type: mongoose.Schema.Types.ObjectId,
-              ref: "subcategory",
-            }
-          ],
+    cat_slug: {
+        type: String,
+    },
+    imgUrl: {
+        type: String,
+    },
+    discountPercentage: {
+        type: String,
     },
     isActive: {
-      type: Boolean,
-      default: true,
+        type: Number,
+        default: 1,
     },
-},{ timestamps: { createdAt: "created_at", updatedAt: "updated_at" } })
+}, { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } })
 
 module.exports = mongoose.model("category", categoryModel);

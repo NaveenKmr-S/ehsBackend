@@ -2,24 +2,26 @@ const mongoose = require("mongoose");
 
 const schema = mongoose.Schema;
 
-const materialDimensionModel = new schema(
-  {
-    title: {
-      type: String,
+const materialDimensionModel = new schema({
+    material_title: {
+        type: String,
     },
-    imgUrl: {
-      type: String,
+    material_imgUrl: {
+        type: String,
     },
-    type: {
-      type: Number,
+    dimension_title: {
+        type: String,
+    },
+    dimension_imgUrl: {
+        type: String,
+    },
+    price: {
+        type: Number,
     },
     isActive: {
-      type: Boolean,
-      default: true,
+        type: Number,
+        default: 1,
     },
-  },
-  { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
-);
+}, { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } });
 
-//0 - Material 1 -dimension
 module.exports = mongoose.model("MaterialDimension", materialDimensionModel);

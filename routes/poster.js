@@ -5,16 +5,16 @@ const router = express.Router();
 
 const verifyJwt = require("../middleware/jwt");
 
-router.get('/getPoster', verifyJwt, posterControl.getPoster);
+router.get('/getPoster', posterControl.getPoster);
 
-router.get('/getPosterById/:posterId', verifyJwt, posterControl.getPosterById);
+router.get('/getPosterById', posterControl.getPosterById);
 
-router.get("/getPosterBySubCategory/:subCategory",posterControl.getPosterBySubCategory);
+router.get("/getPosterByCatSubCat", posterControl.getPosterBySubCategory);
 
-router.post('/createPoster',storageUrl.single("imgUrl"),  posterControl.createPoster);
+router.post('/createPoster', posterControl.createPoster);
 
-router.post('/updatePoster',storageUrl.single("imgUrl"),  posterControl.updatePoster);
+router.post('/updatePoster', posterControl.updatePoster);
 
-router.post('/deletePoster', posterControl.deletePoster);
+router.post('/uploadFile', storageUrl.single("imgUrl"), posterControl.uploadFile);
 
 module.exports = router;
