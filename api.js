@@ -120,11 +120,11 @@ mongoose
     )
     .then(() => {
         console.log("DB Connected!!!")
+
+        app.listen(process.env.PORT || 8080, () =>
+            console.log("Server started!!!")
+        );
     })
     .catch((err) => {
         console.log(err);
     });
-
-app.listen(process.env.PORT || 8080, () =>
-    console.log("Server started!!!")
-);
