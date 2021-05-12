@@ -29,6 +29,9 @@ const posterModel = new schema({
     description: {
         type: String,
     },
+    originalPrice: {
+        type: Number
+    },
     discountPercentage: {
         type: String,
     },

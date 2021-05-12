@@ -4,6 +4,7 @@ const categoryDb = require("../model/categoryModel");
 const base64_encode = require("../helpers/base64");
 const fs = require("fs");
 const commonFunction = require("../common/common")
+const mongoose = require("mongoose");
 
 
 exports.createPoster = async(req, res, next) => {
@@ -26,6 +27,7 @@ exports.createPoster = async(req, res, next) => {
             weight: payload.weight,
             additionalDetails: payload.additionalDetails,
             bestSeller: payload.bestSeller,
+            originalPrice: payload.originalPrice
 
         };
         if (!insertObj.name) {
@@ -95,11 +97,11 @@ exports.getPosterBySubCategory = async(req, res, next) => {
         }
         let skip = payload.skip || 0
         let limit = payload.limit || 20
-        payload.category_slug ? findCriteria.category_slug = payload.category_slug : ""
-        payload.cat_obj_id ? findCriteria.cat_obj_id = payload.cat_obj_id : ""
-        payload.subcategorySlug ? findCriteria.subcategory_slug = payload.subCategorySlug : ""
-        payload.sub_cat_obj_id ? findCriteria.sub_cat_obj_id = payload.sub_cat_obj_id : ""
-        if (findCriteria.category_slug || findCriteria.cat_obj_id) {
+        payload.category_slug ? findCriteria.cat_slug = payload.category_slug : ""
+        payload.cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.cat_obj_id) : ""
+        payload.subcategorySlug ? findCriteria.sub_cat_slug = payload.subCategorySlug : ""
+        payload.sub_cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.sub_cat_obj_id) : ""
+        if (findCriteria.cat_slug || findCriteria._id) {
             let catResult = await categoryDb.find(findCriteria).limit(1).exec()
             if (!(catResult && Array.isArray(catResult) && catResult.length)) {
                 throw new Error("Category Not Found")
@@ -113,7 +115,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
             let postersExists = await posterDb.find(posterFindCriteria).skip(skip).limit(limit)
             return commonFunction.actionCompleteResponse(res, postersExists)
 
-        } else if (findCriteria.sub_cat_obj_id || findCriteria.subCategorySlug) {
+        } else if (findCriteria._id || findCriteria.sub_cat_slug) {
             let subcatResult = await subCategoryDb.find(findCriteria).limit(1).exec()
             if (!(subcatResult && Array.isArray(subcatResult) && subcatResult.length)) {
                 throw new Error("sub Category Not Found")
@@ -181,6 +183,7 @@ exports.updatePoster = async(req, res, next) => {
         payload.sku ? updateObj.sku = payload.sku : ""
         payload.weight ? updateObj.weight = payload.weight : ""
         payload.additionalDetails ? updateObj.additionalDetails = payload.additionalDetails : ""
+        payload.originalPrice ? updateObj.originalPrice = payload.originalPrice : ""
         payload.bestSeller == 0 || payload.bestSeller ? updateObj.bestSeller = payload.bestSeller : ""
         payload.isActive == 0 || payload.isActive ? updateObj.isActive = payload.isActive : ""
         if (payload.operationType) {
