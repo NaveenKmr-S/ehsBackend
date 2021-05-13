@@ -24,6 +24,22 @@ exports.languagesPoster = {
     BILINGUAL: 3
 }
 
+
+exports.tokenDetails = {
+    TOKENSECRET: "EHSPRINTSHELLO"
+
+}
+
+exports.getOtpCreation = function() {
+    var otp = Math.floor(100000 + Math.random() * 900000);
+    const ttl = 5 * 60 * 1000;
+    const expires = Date.now() + ttl;
+    return {
+        otp: otp,
+        expires_in: expires
+    }
+}
+
 exports.autoCreateSlug = function(text) {
     text = "" + text // toString
     text = text.replace(/[^a-zA-Z ]/g, ""); // replace all special char 
