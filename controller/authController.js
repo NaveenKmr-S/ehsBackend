@@ -109,13 +109,14 @@ exports.signUpNew = async(req, res, next) => {
             let email = payload.email;
             let password = payload.password;
             let passwordHash = await bcrypt.hash(password, saltRounds)
+            console.log(passwordHash, "pass- hash")
             let findCriteria = {
                 emailid: email,
 
             }
             let userFound = await userDb.find(findCriteria).limit(1).exec()
             if (userFound && Array.isArray(userFound) && userFound.length) {
-                if (!userFound[0].is_account_activated) {
+                if (userFound[0].is_account_activated) {
                     throw new Error("Account Aldready Activated")
                 }
                 if (!userFound[0].is_otp_verified) {
@@ -144,7 +145,7 @@ exports.signUpNew = async(req, res, next) => {
             }
             let userFound = await userDb.find(findCriteria).limit(1).exec()
             if (userFound && Array.isArray(userFound) && userFound.length) {
-                if (!userFound[0].is_account_activated) {
+                if (userFound[0].is_account_activated) {
                     throw new Error("Account Aldready Activated")
                 }
                 if (!userFound[0].is_otp_verified) {
@@ -169,6 +170,7 @@ exports.signUpNew = async(req, res, next) => {
 
         }
     } catch (error) {
+        console.log(error)
         commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
@@ -193,6 +195,10 @@ exports.requestOtpNew = async(req, res, next) => {
             if (userDetails && Array.isArray(userDetails) && userDetails.length) {
                 throw new Error("Account Aldready Exists , Please Login")
             }
+            let deleteCriteria = {
+                emailid: payload.email,
+            }
+            await userDb.deleteMany(deleteCriteria)
             let insertObj = {
                 emailid: payload.email,
                 otp: otpDetails.otp,
@@ -218,7 +224,11 @@ exports.requestOtpNew = async(req, res, next) => {
             if (userDetails && Array.isArray(userDetails) && userDetails.length) {
                 throw new Error("Account Aldready Exists , Please Login")
             }
-            let successResponse = await client.messages.create({ body: `Your otp for EHS is ${otpDetails.otp}`, from: '+919632418602', to: payload.phone })
+            let deleteCriteria = {
+                phonenumber: payload.phone,
+            }
+            await userDb.deleteMany(deleteCriteria)
+            let successResponse = await client.messages.create({ body: `Your otp for EHS is ${otpDetails.otp}`, from: '+14076342637', to: payload.phone })
             let insertObj = {
                 phonenumber: payload.phone,
                 otp: otpDetails.otp,
@@ -236,6 +246,7 @@ exports.requestOtpNew = async(req, res, next) => {
             throw new Error("No Valid Details Provided")
         }
     } catch (err) {
+        console.log(err)
         commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }

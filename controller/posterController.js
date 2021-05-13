@@ -55,14 +55,18 @@ exports.getPosterById = async(req, res, next) => {
             isActive: 1
         }
         payload.slug ? findCriteria.slug = payload.slug : ""
-        payload.poster_obj_id ? findCriteria.poster_obj_id = payload.poster_obj_id : ""
-        let posterResult = poster.find(findCriteria)
+        payload.poster_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.poster_obj_id) : ""
+        console.log(findCriteria)
+        let posterResult = await posterDb.find(findCriteria)
         let result = await posterDb.find(findCriteria)
             .populate("category")
             .populate("subCategory")
             .populate("materialDimension")
+        if (!(result && Array.isArray(result) && result.length)) {
+            throw new Error("Poster Not Found with the given Data")
+        }
         let parsedPoster = JSON.parse(JSON.stringify(posterResult))
-        let category = parsedPoster.category
+        let category = parsedPoster[0].category
 
         let findRealtedPosters = {
             isActive: 1,
