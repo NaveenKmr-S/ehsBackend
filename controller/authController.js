@@ -141,7 +141,7 @@ exports.updateUserCartNew = async(req, res, next) => {
         }
         let findMaterialDimesn = {
             isActive: 1,
-            _id: mongoose.Types.Object(material_obj_id)
+            _id: mongoose.Types.ObjectId(material_obj_id)
         }
         let materialFind = await materialDimensionDb.find(findMaterialDimesn)
         if (!(materialFind && Array.isArray(materialFind) && materialFind.length)) {
@@ -152,7 +152,7 @@ exports.updateUserCartNew = async(req, res, next) => {
         let totalPrice = materialJsonDetails.price * quantity;
         let insertObj = {
             poster_details: mongoose.Types.ObjectId(poster_obj_id),
-            materialDimension: mongoose.Types.Object(material_obj_id),
+            materialDimension: mongoose.Types.ObjectId(material_obj_id),
             quantity: quantity,
             total: totalPrice
         }
@@ -205,6 +205,7 @@ exports.updateUserCartNew = async(req, res, next) => {
         }
 
     } catch (err) {
+        console.log(err)
         return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
