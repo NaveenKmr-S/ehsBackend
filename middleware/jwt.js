@@ -4,7 +4,7 @@ const commonFunction = require("../common/common")
 const userDb = require("../model/userModel");
 const mongoose = require("mongoose");
 
-exports.verifyJwtToken = (req, res, next) => {
+exports.verifyJwtToken = async(req, res, next) => {
     let token = req.headers["x-access-token"];
     try {
         if (!token) {

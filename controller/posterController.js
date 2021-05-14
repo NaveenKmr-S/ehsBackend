@@ -16,10 +16,10 @@ exports.insertUpdateRating = async(req, res, next) => {
         let findCriteria = {
             isActive: 1
         }
-        payload.poster_obj_id ? findCriteria.poster_obj_id = payload.poster_obj_id : null
+        payload.poster_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.poster_obj_id) : null
         payload.poster_slug ? findCriteria.slug = payload.poster_slug : null
 
-        if (userId && posterId) {
+        if (userObjId && findCriteria._id) {
             let posterDbDataFound = await posterDb.find(findCriteria).exec();
             if (posterDbDataFound && Array.isArray(posterDbDataFound) && posterDbDataFound.length) {
                 let rating = posterDbDataFound[0].rating;
@@ -72,7 +72,7 @@ exports.insertUpdateRating = async(req, res, next) => {
                     return commonFunction.actionCompleteResponse(res, ratingUpdated)
                 }
             } else {
-                throw new Error("Product id is wrong")
+                throw new Error("poster id is wrong")
             }
 
         } else {
@@ -80,6 +80,8 @@ exports.insertUpdateRating = async(req, res, next) => {
         }
     } catch (err) {
         console.log(err);
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
+
     }
 }
 
