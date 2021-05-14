@@ -16,9 +16,26 @@ const userschema = mongoose.Schema({
     phonenumber: {
         type: String,
     },
-    address: {
-        type: String,
-    },
+    address: [{
+        houseDetails: {
+            type: String,
+        },
+        pincode: {
+            type: Number,
+        },
+        lat: {
+            type: String,
+        },
+        lon: {
+            type: String,
+        },
+        state: {
+            type: String,
+        },
+        country: {
+            type: String,
+        }
+    }],
     otp: {
         type: Number,
     },
