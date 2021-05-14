@@ -15,10 +15,10 @@ exports.getCategory = async(req, res, next) => {
         payload.cat_slug ? findCriteria.cat_slug = payload.cat_slug : ""
 
         let result = await categoryDb.find(findCriteria).skip(skip).limit(limit)
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
     }
 };
 
@@ -51,10 +51,10 @@ exports.getCategoryById = async(req, res, next) => {
         ]
         let result = await categoryDb.aggregate(agg)
 
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 
@@ -83,10 +83,10 @@ exports.createCategory = async(req, res, next) => {
         }
 
         let result = await new categoryDb(insertObj).save();
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 };
@@ -116,8 +116,8 @@ exports.updateCategory = async(req, res, next) => {
             throw new Error("Sub Cat obj not found")
         }
         let result = await categoryDb.findOneAndUpdate({ _id: cat_obj_id }, updateObj, { new: true })
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
     }
 };

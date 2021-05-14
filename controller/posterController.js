@@ -74,22 +74,30 @@ exports.getPosterById = async(req, res, next) => {
                 $in: category
             }
         }
-        let relatedProd = await posterDb.find(findRealtedPosters).limit(10).exec()
+        let relatedProd = await posterDb.find(findRealtedPosters)
+            .populate("category")
+            .populate("subCategory")
+            .populate("materialDimension")
+            .limit(10).exec()
         let bestSellerFindCriteria = {
             isActive: 1,
             bestSeller: 1
         }
-        let bestSellarposter = await posterDb.find(bestSellerFindCriteria).limit(10).exec()
+        let bestSellarposter = await posterDb.find(bestSellerFindCriteria)
+            .populate("category")
+            .populate("subCategory")
+            .populate("materialDimension")
+            .limit(10).exec()
         let responsetoSend = {
             posterDetails: result,
             realtedPosters: relatedProd,
             youMayAlsoLike: bestSellarposter
         }
 
-        commonFunction.actionCompleteResponse(res, responsetoSend)
+        return commonFunction.actionCompleteResponse(res, responsetoSend)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
     }
 };
 
@@ -103,8 +111,9 @@ exports.getPosterBySubCategory = async(req, res, next) => {
         let limit = payload.limit || 20
         payload.category_slug ? findCriteria.cat_slug = payload.category_slug : ""
         payload.cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.cat_obj_id) : ""
-        payload.subcategorySlug ? findCriteria.sub_cat_slug = payload.subCategorySlug : ""
+        payload.subCategorySlug ? findCriteria.sub_cat_slug = payload.subCategorySlug : ""
         payload.sub_cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.sub_cat_obj_id) : ""
+        payload.bestseller ? findCriteria.bestSeller = payload.bestseller : ""
         if (findCriteria.cat_slug || findCriteria._id) {
             let catResult = await categoryDb.find(findCriteria).limit(1).exec()
             if (!(catResult && Array.isArray(catResult) && catResult.length)) {
@@ -137,7 +146,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
             throw new Error("Not Data Available, Enter Proper Data")
         }
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 };
@@ -155,10 +164,10 @@ exports.getPoster = async(req, res, next) => {
             .populate("category")
             .populate("subCategory")
             .populate("materialDimension").skip(skip).limit(limit)
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 };
@@ -225,10 +234,10 @@ exports.updatePoster = async(req, res, next) => {
             }
         }
         let result = await posterDb.findOneAndUpdate({ _id: poster_obj_id }, updateObj, { new: true })
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 };
@@ -242,10 +251,10 @@ exports.uploadFile = async(req, res, next) => {
             destination: req.file.destination,
             fileName: req.file.filename
         }
-        commonFunction.actionCompleteResponse(res, responseObj)
+        return commonFunction.actionCompleteResponse(res, responseObj)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 }

@@ -11,12 +11,12 @@ exports.getSubCategory = async(req, res, next) => {
         let findCriteria = {
             isActive: 1
         }
-        payload.categoryId ? findCriteria.categoryId = mongoose.Schema.Types.ObjectId(payload.categoryId) : ""
+        payload.categoryId ? findCriteria.categoryId = mongoose.Types.ObjectId(payload.categoryId) : ""
         let result = await subCategoryDb.find(findCriteria).skip(skip).limit(limit)
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
     }
 
 };
@@ -45,10 +45,10 @@ exports.createSubCategory = async(req, res, next) => {
             throw new Error("Sub Category already exists with this name")
         }
         let result = await new subCategoryDb(insertObj).save();
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 };
@@ -79,8 +79,8 @@ exports.updateSubCategory = async(req, res, next) => {
             throw new Error("Sub Cat obj not found")
         }
         let result = await subCategoryDb.findOneAndUpdate({ _id: sub_cat_obj_id }, updateObj, { new: true })
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
     }
 };
