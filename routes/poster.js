@@ -17,4 +17,7 @@ router.post('/updatePoster', posterControl.updatePoster);
 
 router.post('/uploadFile', storageUrl.single("imgUrl"), posterControl.uploadFile);
 
+router.post('/insertUpdateRating', verifyJwt.verifyJwtToken, posterControl.insertUpdateRating)
+
+
 module.exports = router;

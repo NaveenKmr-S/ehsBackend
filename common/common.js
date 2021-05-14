@@ -8,6 +8,11 @@ let responseMessages = {
 
 };
 
+exports.operationTypeInserUpda = {
+    INSERT: 1,
+    UPDATE: 2,
+}
+
 let responseFlags = {
     PARAMETER_MISSING: 100,
     ACTION_COMPLETE: 200,

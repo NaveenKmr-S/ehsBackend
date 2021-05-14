@@ -7,6 +7,82 @@ const commonFunction = require("../common/common")
 const mongoose = require("mongoose");
 
 
+exports.insertUpdateRating = async(req, res, next) => {
+    try {
+        let payload = req.body
+        let userObjId = req.userId;
+        let ratingUserGiven = payload.rating;
+        let feedBack = payload.feedback;
+        let findCriteria = {
+            isActive: 1
+        }
+        payload.poster_obj_id ? findCriteria.poster_obj_id = payload.poster_obj_id : null
+        payload.poster_slug ? findCriteria.slug = payload.poster_slug : null
+
+        if (userId && posterId) {
+            let posterDbDataFound = await posterDb.find(findCriteria).exec();
+            if (posterDbDataFound && Array.isArray(posterDbDataFound) && posterDbDataFound.length) {
+                let rating = posterDbDataFound[0].rating;
+                let existingRatingObject = rating.find(
+                    (ele) => ele.userId.toString() === userObjId.toString()
+                );
+                if (existingRatingObject === undefined) {
+                    let updateCri = {
+                        $push: {
+                            rating: {
+                                rating: ratingUserGiven,
+                                userId: userObjId,
+                                feedback: feedBack
+                            }
+                        },
+                    }
+                    let ratingAdded = await posterDb.findByIdAndUpdate(findCriteria, updateCri, { new: true }).exec();
+                    let updateCriNew = [{
+                        $set: {
+                            average_rating: {
+                                $avg: "$rating.rating"
+                            }
+                        }
+                    }];
+                    await posterDb.update(findCriteria, updateCriNew).exec()
+                    return commonFunction.actionCompleteResponse(res, ratingAdded)
+                } else {
+                    let updateCri = {
+                        $set: {
+                            "rating.$.rating": ratingUserGiven,
+                            "rating.$.feedback": feedBack
+                        }
+                    }
+
+                    let updateCriNew = [{
+                        $set: {
+                            average_rating: {
+                                $avg: "$rating.rating"
+                            }
+                        }
+                    }];
+                    let findCri = findCriteria
+                    findCriteria = {
+                        ...findCriteria,
+                        "rating.userId": userObjId
+                    };
+                    const ratingUpdated = await posterDb.updateOne(findCriteria, updateCri, { new: true }).exec();
+                    await posterDb.update(findCri, updateCriNew).exec()
+
+                    return commonFunction.actionCompleteResponse(res, ratingUpdated)
+                }
+            } else {
+                throw new Error("Product id is wrong")
+            }
+
+        } else {
+            throw new Error("Proper Details Not Found")
+        }
+    } catch (err) {
+        console.log(err);
+    }
+}
+
 exports.createPoster = async(req, res, next) => {
     try {
         let payload = req.body;
@@ -77,21 +153,56 @@ exports.getPosterById = async(req, res, next) => {
         let relatedProd = await posterDb.find(findRealtedPosters)
             .populate("category")
             .populate("subCategory")
-            .populate("materialDimension")
             .limit(10).exec()
         let bestSellerFindCriteria = {
             isActive: 1,
             bestSeller: 1
         }
+        let aggreg = [{
+            $match: findCriteria
+        }, {
+            "$project": {
+                rating: {
+                    "$size": "$rating"
+                }
+            }
+        }]
+
+        let arrRatings = [{
+                "$match": findCriteria
+            },
+            {
+                "$unwind": "$rating"
+            },
+            {
+                $group: {
+                    _id: "$rating.rating",
+                    "sumvalues": {
+                        "$sum": 1
+                    }
+                }
+            },
+            {
+                "$project": {
+                    _id: 0,
+                    rating: "$_id",
+                    count: "$sumvalues",
+
+                }
+            }
+        ]
+        let posterRating = await posterDb.aggregate(aggreg)
+        let ratingWiseMembers = await posterDb.aggregate(arrRatings)
         let bestSellarposter = await posterDb.find(bestSellerFindCriteria)
             .populate("category")
             .populate("subCategory")
-            .populate("materialDimension")
             .limit(10).exec()
         let responsetoSend = {
             posterDetails: result,
             realtedPosters: relatedProd,
-            youMayAlsoLike: bestSellarposter
+            youMayAlsoLike: bestSellarposter,
+            totalNoOfRating: posterRating[0].rating,
+            ratingTotalWise: ratingWiseMembers
         }
 
         return commonFunction.actionCompleteResponse(res, responsetoSend)

@@ -47,19 +47,17 @@ const userschema = mongoose.Schema({
         type: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: "PosterModel",
-        }, ],
+        }],
     },
     cart: {
         type: [{
-            itemDetails: {
+            poster_details: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "PosterModel",
             },
-            material: {
-                type: String,
-            },
-            dimension: {
-                type: String,
+            materialDimension: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "MaterialDimension",
             },
             quantity: {
                 type: Number,
@@ -67,7 +65,8 @@ const userschema = mongoose.Schema({
             total: {
                 type: String,
             },
-        }, ],
+        }],
+        default: []
     },
     session_token: {
         type: String
