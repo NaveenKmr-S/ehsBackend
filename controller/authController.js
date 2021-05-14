@@ -1,4 +1,7 @@
 const userDb = require("../model/userModel");
+const posterDb = require("../model/posterModel");
+const materialDimensionDb = require("../model/materialDimensionModel");
+
 const jwt = require("jsonwebtoken");
 const transporter = require("../helpers/mail");
 require("dotenv").config();
@@ -8,6 +11,7 @@ const crypto = require("crypto");
 const commonFunction = require("../common/common")
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const mongoose = require("mongoose");
 
 exports.getUsers = (req, res, next) => {
     userDb
@@ -100,6 +104,111 @@ exports.checkAlreadyUserExist = (req, res, next) => {
     }
 };
 
+exports.updateUserCartNew = async(req, res, next) => {
+    try {
+        let user_obj_id = req.userId
+        let payload = req.body
+        let poster_obj_id = payload.poster_obj_id
+        let material_obj_id = payload.material_obj_id
+        let quantity = payload.quantity
+        let removeCart = payload.removeCart
+
+        if (removeCart) {
+            let updaCri = {
+                _id: mongoose.Types.ObjectId(user_obj_id)
+            }
+            let updaObj = {
+                $pull: {
+                    "cart": {
+                        "poster_details": mongoose.Types.ObjectId(poster_obj_id)
+                    }
+                }
+            }
+            let updatedCart = await userDb.findOneAndUpdate(updaCri, updaObj, { new: true })
+            return commonFunction.actionCompleteResponse(res, updatedCart)
+        }
+
+        if (!poster_obj_id || !material_obj_id || !quantity) {
+            throw new Error("Please post with valid Details")
+        }
+        let posterFindCriteria = {
+            _id: mongoose.Types.ObjectId(poster_obj_id),
+            isActive: 1
+        }
+        let posterFound = await posterDb.find(posterFindCriteria).limit(1).exec();
+        if (!(posterFound && Array.isArray(posterFound) && posterFound.length)) {
+            throw new Error("poster id is wrong or poster Not Found")
+        }
+        let findMaterialDimesn = {
+            isActive: 1,
+            _id: mongoose.Types.Object(material_obj_id)
+        }
+        let materialFind = await materialDimensionDb.find(findMaterialDimesn)
+        if (!(materialFind && Array.isArray(materialFind) && materialFind.length)) {
+            throw new Error("poster id is wrong or poster Not Found")
+        }
+        let materialJsonDetails = materialFind[0]
+        let posterJsonDetails = posterFound[0]
+        let totalPrice = materialJsonDetails.price * quantity;
+        let insertObj = {
+            poster_details: mongoose.Types.ObjectId(poster_obj_id),
+            materialDimension: mongoose.Types.Object(material_obj_id),
+            quantity: quantity,
+            total: totalPrice
+        }
+        let userFindCriteria = {
+            _id: mongoose.Types.ObjectId(user_obj_id),
+        }
+        let userDetails = await userDb.find(userFindCriteria).limit(1).exec()
+        if (!(userDetails && Array.isArray(userDetails) && userDetails.length)) {
+            throw new Error("User Not Found");
+        }
+
+        let userJsonData = userDetails[0]
+        let cartItems = userJsonData.cart || [];
+
+        if (cartItems.length) {
+            let existingRatingObject = cartItems.find(
+                (ele) => ele.poster_details.toString() === poster_obj_id.toString()
+            );
+            if (existingRatingObject === undefined) {
+                let updateCriteria = {
+                    $addToSet: {
+                        cart: insertObj
+                    }
+                }
+                let updatedCart = await userDb.findOneAndUpdate(userFindCriteria, updateCriteria, { new: true })
+                return commonFunction.actionCompleteResponse(res, updatedCart)
+            } else {
+                let updCri = {
+                    _id: mongoose.Types.ObjectId(user_obj_id),
+                    "cart.poster_details": mongoose.Types.ObjectId(poster_obj_id),
+                }
+                let updateObjCart = {
+                    $set: {
+                        "cart.$.quantity": insertObj.quantity,
+                        "cart.$.total": insertObj.total,
+                        "cart.$.materialDimension": insertObj.materialDimension,
+                    }
+                }
+                let updatedCart = await userDb.findOneAndUpdate(updCri, updateObjCart, { new: true })
+                return commonFunction.actionCompleteResponse(res, updatedCart)
+            }
+        } else {
+            let updateCriteria = {
+                $addToSet: {
+                    cart: insertObj
+                }
+            }
+            let updatedCart = await userDb.findOneAndUpdate(userFindCriteria, updateCriteria, { new: true })
+            return commonFunction.actionCompleteResponse(res, updatedCart)
+        }
+
+    } catch (err) {
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
+
+    }
+}
 
 exports.signUpNew = async(req, res, next) => {
     try {

@@ -7,6 +7,82 @@ const commonFunction = require("../common/common")
 const mongoose = require("mongoose");
 
 
+exports.insertUpdateRating = async(req, res, next) => {
+    try {
+        let payload = req.body
+        let userObjId = req.userId;
+        let ratingUserGiven = payload.rating;
+        let feedBack = payload.feedback;
+        let findCriteria = {
+            isActive: 1
+        }
+        payload.poster_obj_id ? findCriteria.poster_obj_id = payload.poster_obj_id : null
+        payload.poster_slug ? findCriteria.slug = payload.poster_slug : null
+
+        if (userId && posterId) {
+            let posterDbDataFound = await posterDb.find(findCriteria).exec();
+            if (posterDbDataFound && Array.isArray(posterDbDataFound) && posterDbDataFound.length) {
+                let rating = posterDbDataFound[0].rating;
+                let existingRatingObject = rating.find(
+                    (ele) => ele.userId.toString() === userObjId.toString()
+                );
+                if (existingRatingObject === undefined) {
+                    let updateCri = {
+                        $push: {
+                            rating: {
+                                rating: ratingUserGiven,
+                                userId: userObjId,
+                                feedback: feedBack
+                            }
+                        },
+                    }
+                    let ratingAdded = await posterDb.findByIdAndUpdate(findCriteria, updateCri, { new: true }).exec();
+                    let updateCriNew = [{
+                        $set: {
+                            average_rating: {
+                                $avg: "$rating.rating"
+                            }
+                        }
+                    }];
+                    await posterDb.update(findCriteria, updateCriNew).exec()
+                    return commonFunction.actionCompleteResponse(res, ratingAdded)
+                } else {
+                    let updateCri = {
+                        $set: {
+                            "rating.$.rating": ratingUserGiven,
+                            "rating.$.feedback": feedBack
+                        }
+                    }
+
+                    let updateCriNew = [{
+                        $set: {
+                            average_rating: {
+                                $avg: "$rating.rating"
+                            }
+                        }
+                    }];
+                    let findCri = findCriteria
+                    findCriteria = {
+                        ...findCriteria,
+                        "rating.userId": userObjId
+                    };
+                    const ratingUpdated = await posterDb.updateOne(findCriteria, updateCri, { new: true }).exec();
+                    await posterDb.update(findCri, updateCriNew).exec()
+
+                    return commonFunction.actionCompleteResponse(res, ratingUpdated)
+                }
+            } else {
+                throw new Error("Product id is wrong")
+            }
+
+        } else {
+            throw new Error("Proper Details Not Found")
+        }
+    } catch (err) {
+        console.log(err);
+    }
+}
+
 exports.createPoster = async(req, res, next) => {
     try {
         let payload = req.body;
@@ -74,22 +150,65 @@ exports.getPosterById = async(req, res, next) => {
                 $in: category
             }
         }
-        let relatedProd = await posterDb.find(findRealtedPosters).limit(10).exec()
+        let relatedProd = await posterDb.find(findRealtedPosters)
+            .populate("category")
+            .populate("subCategory")
+            .limit(10).exec()
         let bestSellerFindCriteria = {
             isActive: 1,
             bestSeller: 1
         }
-        let bestSellarposter = await posterDb.find(bestSellerFindCriteria).limit(10).exec()
+        let aggreg = [{
+            $match: findCriteria
+        }, {
+            "$project": {
+                rating: {
+                    "$size": "$rating"
+                }
+            }
+        }]
+
+        let arrRatings = [{
+                "$match": findCriteria
+            },
+            {
+                "$unwind": "$rating"
+            },
+            {
+                $group: {
+                    _id: "$rating.rating",
+                    "sumvalues": {
+                        "$sum": 1
+                    }
+                }
+            },
+            {
+                "$project": {
+                    _id: 0,
+                    rating: "$_id",
+                    count: "$sumvalues",
+
+                }
+            }
+        ]
+        let posterRating = await posterDb.aggregate(aggreg)
+        let ratingWiseMembers = await posterDb.aggregate(arrRatings)
+        let bestSellarposter = await posterDb.find(bestSellerFindCriteria)
+            .populate("category")
+            .populate("subCategory")
+            .limit(10).exec()
         let responsetoSend = {
             posterDetails: result,
             realtedPosters: relatedProd,
-            youMayAlsoLike: bestSellarposter
+            youMayAlsoLike: bestSellarposter,
+            totalNoOfRating: posterRating[0].rating,
+            ratingTotalWise: ratingWiseMembers
         }
 
-        commonFunction.actionCompleteResponse(res, responsetoSend)
+        return commonFunction.actionCompleteResponse(res, responsetoSend)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
     }
 };
 
@@ -103,8 +222,9 @@ exports.getPosterBySubCategory = async(req, res, next) => {
         let limit = payload.limit || 20
         payload.category_slug ? findCriteria.cat_slug = payload.category_slug : ""
         payload.cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.cat_obj_id) : ""
-        payload.subcategorySlug ? findCriteria.sub_cat_slug = payload.subCategorySlug : ""
+        payload.subCategorySlug ? findCriteria.sub_cat_slug = payload.subCategorySlug : ""
         payload.sub_cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.sub_cat_obj_id) : ""
+        payload.bestseller ? findCriteria.bestSeller = payload.bestseller : ""
         if (findCriteria.cat_slug || findCriteria._id) {
             let catResult = await categoryDb.find(findCriteria).limit(1).exec()
             if (!(catResult && Array.isArray(catResult) && catResult.length)) {
@@ -137,7 +257,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
             throw new Error("Not Data Available, Enter Proper Data")
         }
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 };
@@ -155,10 +275,10 @@ exports.getPoster = async(req, res, next) => {
             .populate("category")
             .populate("subCategory")
             .populate("materialDimension").skip(skip).limit(limit)
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 };
@@ -225,10 +345,10 @@ exports.updatePoster = async(req, res, next) => {
             }
         }
         let result = await posterDb.findOneAndUpdate({ _id: poster_obj_id }, updateObj, { new: true })
-        commonFunction.actionCompleteResponse(res, result)
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 };
@@ -242,10 +362,10 @@ exports.uploadFile = async(req, res, next) => {
             destination: req.file.destination,
             fileName: req.file.filename
         }
-        commonFunction.actionCompleteResponse(res, responseObj)
+        return commonFunction.actionCompleteResponse(res, responseObj)
 
     } catch (err) {
-        commonFunction.sendActionFailedResponse(res, null, err.message)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
 
     }
 }

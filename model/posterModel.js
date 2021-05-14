@@ -38,6 +38,9 @@ const posterModel = new schema({
     stocks: {
         type: Number,
     },
+    average_rating: {
+        type: Number
+    },
     rating: {
         type: [{
             userId: {
@@ -45,27 +48,19 @@ const posterModel = new schema({
                 ref: "user",
             },
             rating: {
+                type: Number,
+            },
+            feedback: {
                 type: String,
             },
-        }, ],
+        }],
         default: [],
     },
     bought: {
         type: Number,
         default: 0,
     },
-    reviews: {
-        type: [{
-            userId: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "user",
-            },
-            feedback: {
-                type: String,
-            },
-        }, ],
-        default: [],
-    },
+
     materialDimension: {
         type: [{
             type: mongoose.Schema.Types.ObjectId,
