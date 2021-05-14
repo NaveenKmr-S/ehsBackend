@@ -26,83 +26,87 @@ exports.getUsers = (req, res, next) => {
         });
 };
 
-exports.getUserById = (req, res, next) => {
-    const authId = req.params.authId;
-
+exports.updateWishList = async(req, res, next) => {
     try {
-        userDb
-            .findOne({ _id: authId },
-                "_id firstname lastname emailid phonenumber address isAccountActive isActive"
-            )
-            .then((users) => {
-                if (!users) res.status(404).json({ message: "user not found!!!" });
-                res
-                    .status(200)
-                    .json({ message: "Successfully loaded!!!", users: users });
-            })
-            .catch((err) => {
-                res.status(400).json({ error: `${err}` });
-            });
-    } catch (err) {
-        res.status(400).json({ error: `${err}` });
-    }
-};
+        let user_obj_id = req.userId
+        let findCriteria = {
+            _id: mongoose.Types.ObjectId(user_obj_id)
+        }
+        let payload = req.body
+        let poster_obj_id = payload.poster_obj_id
+        if (payload.add) {
 
-exports.checkIfUserExist = (req, res, next) => {
-    const { emailid, phonenumber } = req.body;
-    if (emailid) {
-        userDb
-            .findOne({ emailid })
-            .then((userRes) => {
-                if (userRes) { next(); } else { res.json({ message: "User Not Found!!!" }) }
-            })
-            .catch((err) => {
-                res.json({ error: `${err}` });
-            });
-    } else if (phonenumber) {
-        userDb
-            .findOne({ phonenumber })
-            .then((userRes) => {
-                if (userRes) {
-                    next();
-                } else {
-                    res.json({ message: "User Not Found!!!" })
+            let updateCriteria = {}
+            payload.poster_obj_id ? updateCriteria.$addToSet = {...updateCriteria.$addToSet, wishList: payload.poster_obj_id } : ""
+            payload.address ? updateCriteria.$addToSet = {...updateCriteria.$addToSet, address: payload.address } : ""
+            let userResult = await userDb.findOneAndUpdate(findCriteria, updateCriteria, { new: true })
+            return commonFunction.actionCompleteResponse(res, userResult)
+
+        } else {
+            let updateCriteria = {}
+            payload.poster_obj_id ? updateCriteria.$pull = {...updateCriteria.$pull, wishList: payload.poster_obj_id } : ""
+            payload.address_pincode ? updateCriteria.$pull = {...updateCriteria.$pull,
+                "address": {
+                    "pincode": payload.address_pincode
                 }
-            })
-            .catch((err) => {
-                res.json({ error: `${err}` });
-            });
-    } else {
-        console.log("No Details Provided");
-    }
-};
+            } : ""
+            console.log(updateCriteria)
+            let userResult = await userDb.findOneAndUpdate(findCriteria, updateCriteria, { new: true })
+            return commonFunction.actionCompleteResponse(res, userResult)
 
-exports.checkAlreadyUserExist = (req, res, next) => {
-    const { emailid, phonenumber } = req.body;
-    if (emailid) {
-        userDb
-            .findOne({ emailid })
-            .then((userRes) => {
-                if (userRes) res.json({ message: "User Already Exists!!!" });
-                else next();
-            })
-            .catch((err) => {
-                res.json({ error: `${err}` });
-            });
-    } else if (phonenumber) {
-        userDb
-            .findOne({ phonenumber })
-            .then((userRes) => {
-                if (userRes) res.json({ message: "User Already Exists!!!" });
-                else next();
-            })
-            .catch((err) => {
-                res.json({ error: `${err}` });
-            });
-    } else {
-        console.log("No Details Provided");
+        }
+    } catch (err) {
+        console.log(err)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
     }
-};
+}
+
+exports.getUserDetailsById = async(req, res, next) => {
+    try {
+        let user_obj_id = req.userId
+        let findCriteria = {
+            _id: mongoose.Types.ObjectId(user_obj_id)
+        }
+        let onlywish = req.query.onlywish
+        let onlyCart = req.query.onlyCart
+        if (onlywish) {
+            let userResult = await userDb.find(findCriteria, {
+                    _id: 1,
+                    name: 1,
+                    wishList: 1
+                })
+                .populate('wishList')
+                .limit(1).exec()
+            return commonFunction.actionCompleteResponse(res, userResult)
+
+        }
+        if (onlyCart) {
+            let userResult = await userDb.find(findCriteria, {
+                    _id: 1,
+                    name: 1,
+                    cart: 1
+                })
+                .populate('cart.poster_details')
+                .populate('cart.materialDimension')
+                .limit(1).exec()
+            return commonFunction.actionCompleteResponse(res, userResult)
+
+        }
+        let userResult = await userDb.find(findCriteria)
+            .populate('cart.poster_details')
+            .populate('cart.materialDimension')
+            .populate('wishList')
+            .limit(1).exec()
+        return commonFunction.actionCompleteResponse(res, userResult)
+    } catch (err) {
+        console.log(err)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
+
+    }
+}
+
+
+
 
 exports.updateUserCartNew = async(req, res, next) => {
     try {

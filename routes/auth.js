@@ -13,13 +13,12 @@ router.post("/login", auth.LoginNew);
 
 router.post('/update_user_cart', verifyJwt.verifyJwtToken, auth.updateUserCartNew);
 
+router.get('/get_user_details_by_id', verifyJwt.verifyJwtToken, auth.getUserDetailsById)
+
+router.post('/add_user_details', verifyJwt.verifyJwtToken, auth.updateWishList)
+
 // router.post("/resetPassOtp", auth.checkIfUserExist, auth.getOtp);
 
-router.get("/getUsers", verifyJwt.verifyJwtToken, auth.getUsers);
-
-router.get("/getUserById/:authId", verifyJwt.verifyJwtToken, auth.getUserById);
-
-router.post("/updateUser", auth.updateUserDetails);
 
 router.post("/resetPassword", auth.resetPassword);
 
