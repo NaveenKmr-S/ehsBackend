@@ -6,15 +6,18 @@ const jwt = require("jsonwebtoken");
 const userschema = mongoose.Schema({
     name: {
         type: String,
+        default: ""
     },
     emailid: {
         type: String,
+        default: ""
     },
     password: {
         type: String,
     },
     phonenumber: {
         type: String,
+        default: ""
     },
     address: [{
         houseDetails: {
@@ -53,12 +56,6 @@ const userschema = mongoose.Schema({
     isAdmin: {
         type: Number,
         default: 0,
-    },
-    orders: {
-        type: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Orders",
-        }, ],
     },
     wishList: {
         type: [{

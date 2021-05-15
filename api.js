@@ -24,38 +24,8 @@ app.use(cors());
 app.use(helmet());
 
 const razorpay = new Razorpay({
-    key_id: "rzp_test_FvIgaLsvcCd3vG",
-    key_secret: "90FggbRBO4DxerTJnvxqEhI4",
-});
-
-app.post("/verification", (req, res) => {
-    // do a validation
-    const secret = "NaveenKmr";
-
-    console.log(req.body);
-
-    const crypto = require("crypto");
-
-    const shasum = crypto.createHmac("sha256", secret);
-    shasum.update(JSON.stringify(req.body));
-    const digest = shasum.digest("hex");
-
-    // console.log(digest, req.headers["x-razorpay-signature"]);
-
-    if (digest === req.headers["x-razorpay-signature"]) {
-        // process it
-
-        console.log("request is legit");
-        console.log(req.body);
-        // require("fs").writeFileSync(
-        //   "payment1.json",
-        //   JSON.stringify(req.body, null, 4)
-        // );
-    } else {
-        // pass it
-        req.json({ status: "failed", message: req.body });
-    }
-    res.json({ status: "ok" });
+    key_id: "rzp_test_ci9tXZyyHXxDTT",
+    key_secret: "s1xu1IQ45jPtUBch6wbSkoQL",
 });
 
 app.post("/razorpay", async(req, res) => {
