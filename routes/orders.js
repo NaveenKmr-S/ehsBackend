@@ -3,14 +3,14 @@ const orders = require("../controller/ordersController");
 const router = express.Router();
 const verifyJwt = require("../middleware/jwt");
 
-router.get("/getOrders", orders.getOrders);
+router.get("/getOrdersAdmin", orders.getAdminOrders);
 
-router.get("/getOrdersById", orders.getOrdersById);
+router.post("/getOrderUser", verifyJwt.verifyJwtToken, orders.getOrdersNew);
 
-router.post("/createOrder", orders.createOrders);
+router.post("/updateOrder", orders.updateOrderNew);
 
-router.post("/updateOrder", orders.updateOrders);
+router.post('/create_order', orders.createOrderNew);
 
-router.post("/deleteOrder", orders.deleteOrders);
+router.post('/on_success_payment', orders.onSuccessPaymentNew)
 
 module.exports = router;

@@ -8,6 +8,30 @@ let responseMessages = {
 
 };
 
+exports.paymentStatus = {
+    NOUSE: 0,
+    INITIATED: 1,
+    FAILED: 2,
+    SUCCESSFUL: 3,
+}
+
+exports.orderStatus = {
+    INITIATED: 1,
+    TRANSIT: 2,
+    OUT_OF_DELIVERY: 3,
+    DELIVERED: 4,
+}
+
+exports.razorPayKey = {
+    key_id: "rzp_test_ci9tXZyyHXxDTT",
+    key_secret: "s1xu1IQ45jPtUBch6wbSkoQL"
+}
+
+exports.userType = {
+    REGISTERED_USER: 1,
+    NEW_USER: 2
+}
+
 exports.operationTypeInserUpda = {
     INSERT: 1,
     UPDATE: 2,

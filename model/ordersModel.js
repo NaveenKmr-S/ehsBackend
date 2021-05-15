@@ -1,83 +1,86 @@
 const { json } = require("body-parser");
 const mongoose = require("mongoose");
 const schema = mongoose.Schema;
+const comonRespnses = require("../common/common")
 
-const ordersModel = new schema(
-  {
+const ordersModel = new schema({
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
+    Name: {
+        type: String
+    },
+    user_type_order: {
+        type: Number,
     },
     emailid: {
-      type: String,
+        type: String,
     },
     phonenumber: {
-      type: String,
+        type: String,
     },
     itemDetails: {
-      type: [
-        {
-          imgUrl: {
-            type: String,
-          },
-          name: {
-            type: String,
-          },
-          originalPrice: {
-            type: String,
-          },
-          link: {
-            type: String,
-          },
-          quantity: {
-            type: Number,
-          },
-          Material: {
-            one: {
-              type: Boolean,
+        type: [{
+            poster_details: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "PosterModel",
             },
-            two: {
-              type: Boolean,
+            materialDimension: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "MaterialDimension",
             },
-            three: {
-              type: Boolean,
+            quantity: {
+                type: Number,
             },
-          },
-          Dimension: {
-            one: {
-              type: Boolean,
+            total: {
+                type: String,
             },
-            two: {
-              type: Boolean,
-            },
-            three: {
-              type: Boolean,
-            },
-          },
-        },
-      ],
+        }],
+        default: []
     },
-    total: {
-      type: String,
+    sumPriceToPay: {
+        type: String,
     },
     paymentId: {
-      type: String,
+        type: String,
     },
     orderId: {
-      type: String,
+        type: String,
+        index: true
     },
     address: {
-      type: String,
+        houseDetails: {
+            type: String,
+        },
+        pincode: {
+            type: Number,
+        },
+        lat: {
+            type: String,
+        },
+        lon: {
+            type: String,
+        },
+        state: {
+            type: String,
+        },
+        country: {
+            type: String,
+        }
     },
-    status: {
-      type: String,
+    paymentStatus: {
+        type: Number,
+        default: 0,
+    },
+    orderStatus: {
+        type: Number,
+        default: 0,
     },
     isActive: {
-      type: Boolean,
-      default: true,
+        type: Number,
+        default: 1,
     },
-  },
-  { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
-);
+}, { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } });
 
 module.exports = mongoose.model("Orders", ordersModel);
