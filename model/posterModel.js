@@ -39,7 +39,8 @@ const posterModel = new schema({
         type: Number,
     },
     average_rating: {
-        type: Number
+        type: Number,
+        default: 0
     },
     rating: {
         type: [{
