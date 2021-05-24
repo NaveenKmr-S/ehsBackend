@@ -226,7 +226,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
         payload.cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.cat_obj_id) : ""
         payload.subCategorySlug ? findCriteria.sub_cat_slug = payload.subCategorySlug : ""
         payload.sub_cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.sub_cat_obj_id) : ""
-        payload.bestseller ? findCriteria.bestSeller = payload.bestseller : ""
+
         if (findCriteria.cat_slug || findCriteria._id) {
             let catResult = await categoryDb.find(findCriteria).limit(1).exec()
             if (!(catResult && Array.isArray(catResult) && catResult.length)) {
@@ -238,6 +238,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
                     $in: catResult[0]._id
                 }
             }
+            payload.bestseller ? posterFindCriteria.bestSeller = payload.bestseller : ""
             let postersExists = await posterDb.find(posterFindCriteria).skip(skip).limit(limit)
             return commonFunction.actionCompleteResponse(res, postersExists)
 
