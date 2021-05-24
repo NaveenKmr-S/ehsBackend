@@ -253,6 +253,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
                     $in: subcatResult[0]._id
                 }
             }
+            payload.bestseller ? posterFindCriteria.bestSeller = payload.bestseller : ""
             let postersExists = await posterDb.find(posterFindCriteria).skip(skip).limit(limit)
             return commonFunction.actionCompleteResponse(res, postersExists)
 
