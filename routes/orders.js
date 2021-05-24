@@ -5,7 +5,7 @@ const verifyJwt = require("../middleware/jwt");
 
 router.get("/getOrdersAdmin", orders.getAdminOrders);
 
-router.post("/getOrderUser", verifyJwt.verifyJwtToken, orders.getOrdersNew);
+router.get("/getOrderUser", verifyJwt.verifyJwtToken, orders.getOrdersNew);
 
 router.post("/updateOrder", orders.updateOrderNew);
 
