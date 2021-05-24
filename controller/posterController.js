@@ -254,7 +254,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
                 }
             }
             payload.bestseller ? posterFindCriteria.bestSeller = payload.bestseller : ""
-            let postersExists = await posterDb.find(posterFindCriteria).skip(skip).limit(limit)
+            let postersExists = await posterDb.find(posterFindCriteria).populate("materialDimension").skip(skip).limit(limit)
             return commonFunction.actionCompleteResponse(res, postersExists)
 
         } else {
