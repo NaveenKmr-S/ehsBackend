@@ -8,6 +8,11 @@ let responseMessages = {
 
 };
 
+exports.discountType = {
+    FLAT: 1,
+    PERCENTAGE: 2
+}
+
 exports.paymentStatus = {
     NOUSE: 0,
     INITIATED: 1,

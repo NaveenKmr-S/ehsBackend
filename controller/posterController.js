@@ -5,7 +5,49 @@ const base64_encode = require("../helpers/base64");
 const fs = require("fs");
 const commonFunction = require("../common/common")
 const mongoose = require("mongoose");
+const authorDb = require("../model/authorModel");
 
+exports.getPosterByAuthor = async(req, res, next) => {
+    try {
+        let payload = req.query
+
+        let skip = payload.skip || 0
+        let limit = payload.limit || 20
+        let author_slug = payload.author_slug
+
+        if (!author_slug) {
+            throw new Error("Passs author_Slug")
+        }
+        let authFindCri = {
+            isActive: 1,
+            author_slug
+        }
+        let authorFound = await authorDb.find(authFindCri)
+        if (!(authorFound && Array.isArray(authorFound) && authorFound.length)) {
+            throw new Error("Author not Found Enter Proper author Slug")
+        }
+
+        let author_obj_id = authorFound[0]._id
+        let findCriteria = {
+            isActive: 1,
+            authors: {
+                $in: [mongoose.Types.ObjectId(author_obj_id)]
+            }
+        }
+        let result = await posterDb.find(findCriteria)
+            .populate("category")
+            .populate("subCategory")
+            .populate("materialDimension").skip(skip).limit(limit)
+
+        let respoSeRSend = {
+            authorDetails: authorFound[0],
+            postersOfAuthor: result
+        }
+        return commonFunction.actionCompleteResponse(res, respoSeRSend)
+    } catch (err) {
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
+    }
+}
 
 exports.insertUpdateRating = async(req, res, next) => {
     try {
@@ -96,7 +138,7 @@ exports.createPoster = async(req, res, next) => {
             creator: payload.creator,
             imgUrl: payload.imgUrl,
             description: payload.description,
-            discountPercentage: payload.discountPercentage,
+            discountValue: payload.discountValue,
             stocks: payload.stocks,
             materialDimension: payload.materialDimension,
             tags: payload.tags,
@@ -105,8 +147,11 @@ exports.createPoster = async(req, res, next) => {
             weight: payload.weight,
             additionalDetails: payload.additionalDetails,
             bestSeller: payload.bestSeller,
-            originalPrice: payload.originalPrice
-
+            originalPrice: payload.originalPrice,
+            discount_type: payload.discount_type,
+            authors: payload.authors,
+            orginal_one_drive_link: payload.orginal_one_drive_link,
+            poster_language_connector: payload.poster_language_connector
         };
         if (!insertObj.name) {
             throw new Error("Give a proper poster name");
@@ -139,12 +184,46 @@ exports.getPosterById = async(req, res, next) => {
         let result = await posterDb.find(findCriteria)
             .populate("category")
             .populate("subCategory")
+            .populate("authors")
             .populate("materialDimension")
         if (!(result && Array.isArray(result) && result.length)) {
             throw new Error("Poster Not Found with the given Data")
         }
         let parsedPoster = JSON.parse(JSON.stringify(posterResult))
         let category = parsedPoster[0].category
+        let subCat = parsedPoster[0].subCategory
+        let discountsAvailable = []
+        let descriptionText = []
+
+        if (category && Array.isArray(category) && category.length) {
+            let catPassTHri = result[0].category[0]
+            if (catPassTHri.use_discount) {
+                let pushDis = {
+                    discountType: catPassTHri.cat_discount_type,
+                    discountValue: catPassTHri.discountValue
+                }
+                discountsAvailable.push(pushDis)
+            }
+            if (catPassTHri.show_description) {
+                descriptionText.push(catPassTHri.cat_description)
+            }
+        }
+
+        if (subCat && Array.isArray(subCat) && subCat.length) {
+            let subCatArrayToMap = result[0].subCategory
+            for (let i = 0; i < subCatArrayToMap.length; i++) {
+                if (subCatArrayToMap[i].use_discount == 1) {
+                    let pushDis = {
+                        discountType: subCatArrayToMap[i].sub_cat_discount_type,
+                        discountValue: subCatArrayToMap[i].discountValue
+                    }
+                    discountsAvailable.push(pushDis)
+                }
+                if (subCatArrayToMap[i].show_description == 1) {
+                    descriptionText.push(subCatArrayToMap[i].sub_cat_description)
+                }
+            }
+        }
 
         let findRealtedPosters = {
             isActive: 1,
@@ -154,6 +233,7 @@ exports.getPosterById = async(req, res, next) => {
         }
         let relatedProd = await posterDb.find(findRealtedPosters)
             .populate("category")
+            .populate("authors")
             .populate("subCategory")
             .limit(10).exec()
         let bestSellerFindCriteria = {
@@ -198,13 +278,16 @@ exports.getPosterById = async(req, res, next) => {
         let bestSellarposter = await posterDb.find(bestSellerFindCriteria)
             .populate("category")
             .populate("subCategory")
+            .populate("authors")
             .limit(10).exec()
         let responsetoSend = {
             posterDetails: result,
             realtedPosters: relatedProd,
             youMayAlsoLike: bestSellarposter,
             totalNoOfRating: posterRating[0].rating,
-            ratingTotalWise: ratingWiseMembers
+            ratingTotalWise: ratingWiseMembers,
+            discountsAvailable,
+            descriptionText
         }
 
         return commonFunction.actionCompleteResponse(res, responsetoSend)
@@ -266,6 +349,32 @@ exports.getPosterBySubCategory = async(req, res, next) => {
     }
 };
 
+exports.getPosterByLanguage = async(req, res, next) => {
+    try {
+        let payload = req.query
+        let findCriteria = {
+            isActive: 1
+        }
+        let skip = payload.skip || 0
+        let limit = payload.limit || 20
+        let language = payload.language
+        if (!language) {
+            throw new Error("Pass in the language key")
+        }
+        findCriteria.language = parseInt(language)
+        let result = await posterDb.find(findCriteria)
+            .populate("category")
+            .populate("subCategory")
+            .populate("authors")
+            .populate("materialDimension").skip(skip).limit(limit)
+        return commonFunction.actionCompleteResponse(res, result)
+
+    } catch (err) {
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
+
+    }
+}
+
 exports.getPoster = async(req, res, next) => {
 
     try {
@@ -278,6 +387,7 @@ exports.getPoster = async(req, res, next) => {
         let result = await posterDb.find(findCriteria)
             .populate("category")
             .populate("subCategory")
+            .populate("authors")
             .populate("materialDimension").skip(skip).limit(limit)
         return commonFunction.actionCompleteResponse(res, result)
 
@@ -305,11 +415,14 @@ exports.updatePoster = async(req, res, next) => {
         payload.creator ? updateObj.creator = payload.creator : ""
         payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
         payload.description ? updateObj.description = payload.description : ""
-        payload.discountPercentage ? updateObj.discountPercentage = payload.discountPercentage : ""
+        payload.discountValue ? updateObj.discountValue = payload.discountValue : ""
+        payload.discount_type == 0 || payload.discount_type ? updateObj.discount_type = payload.discount_type : ""
+
         payload.stocks ? updateObj.stocks = payload.stocks : ""
         payload.link ? updateObj.link = payload.link : ""
         payload.sku ? updateObj.sku = payload.sku : ""
         payload.weight ? updateObj.weight = payload.weight : ""
+        payload.orginal_one_drive_link ? updateObj.orginal_one_drive_link = payload.orginal_one_drive_link : ""
         payload.additionalDetails ? updateObj.additionalDetails = payload.additionalDetails : ""
         payload.originalPrice ? updateObj.originalPrice = payload.originalPrice : ""
         payload.bestSeller == 0 || payload.bestSeller ? updateObj.bestSeller = payload.bestSeller : ""
@@ -323,6 +436,7 @@ exports.updatePoster = async(req, res, next) => {
                         payload.tags ? updateObj.$addToSet = {...updateObj.$addToSet, tags: payload.tags } : ""
                         payload.materialDimension ? updateObj.$addToSet = {...updateObj.$addToSet, materialDimension: payload.materialDimension } : ""
                         payload.imgUrl ? updateObj.$addToSet = {...updateObj.$addToSet, imgUrl: payload.imgUrl } : ""
+                        payload.poster_language_connector ? updateObj.$addToSet = {...updateObj.$addToSet, poster_language_connector: payload.poster_language_connector } : ""
                     }
                     break;
                 case commonFunction.operationType.PULL:
@@ -332,6 +446,8 @@ exports.updatePoster = async(req, res, next) => {
                         payload.tags ? updateObj.$pull = {...updateObj.$pull, tags: payload.tags } : ""
                         payload.materialDimension ? updateObj.$pull = {...updateObj.$pull, materialDimension: payload.materialDimension } : ""
                         payload.imgUrl ? updateObj.$pull = {...updateObj.$pull, imgUrl: payload.imgUrl } : ""
+                        payload.poster_language_connector ? updateObj.$pull = {...updateObj.$pull, poster_language_connector: payload.poster_language_connector } : ""
+
                     }
                     break;
                 case commonFunction.operationType.REPLACE:
@@ -341,6 +457,8 @@ exports.updatePoster = async(req, res, next) => {
                         payload.tags ? updateObj.tags = payload.tags : ""
                         payload.materialDimension ? updateObj.materialDimension = payload.materialDimension : ""
                         payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
+                        payload.poster_language_connector ? updateObj.poster_language_connector = payload.poster_language_connector : ""
+
                     }
                     break;
                 default:
