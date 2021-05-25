@@ -23,6 +23,18 @@ const posterModel = new schema({
     creator: {
         type: String,
     },
+    poster_language_connector: {
+        type: [{
+            poster_obj_id: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "PosterModel"
+            },
+            language: {
+                type: Number
+            }
+        }],
+        default: []
+    },
     imgUrl: [{
         type: String,
     }],
@@ -32,8 +44,13 @@ const posterModel = new schema({
     originalPrice: {
         type: Number
     },
-    discountPercentage: {
+    discount_type: {
+        type: Number,
+        default: commonFunction.discountType.FLAT
+    },
+    discountValue: {
         type: String,
+        default: ""
     },
     stocks: {
         type: Number,
@@ -41,6 +58,17 @@ const posterModel = new schema({
     average_rating: {
         type: Number,
         default: 0
+    },
+    orginal_one_drive_link: {
+        type: String,
+        default: ""
+    },
+    authors: {
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "authors",
+        }],
+        default: []
     },
     rating: {
         type: [{
@@ -67,6 +95,7 @@ const posterModel = new schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: "MaterialDimension",
         }],
+        default: []
     },
     tags: [{
         type: String,

@@ -11,6 +11,9 @@ exports.getSubCategory = async(req, res, next) => {
         let findCriteria = {
             isActive: 1
         }
+        payload.use_discount == 0 || payload.use_discount ? findCriteria.use_discount = payload.use_discount : ""
+        payload.show_description == 0 || payload.show_description ? findCriteria.show_description = payload.show_description : ""
+
         payload.categoryId ? findCriteria.categoryId = mongoose.Types.ObjectId(payload.categoryId) : ""
         let result = await subCategoryDb.find(findCriteria).skip(skip).limit(limit)
         return commonFunction.actionCompleteResponse(res, result)
@@ -28,12 +31,22 @@ exports.createSubCategory = async(req, res, next) => {
         let sub_cat_slug = commonFunction.autoCreateSlug(title);
         let imgUrl = payload.imgUrl
         let categoryId = payload.categoryId;
+        let sub_cat_description = payload.sub_cat_description
+        let show_description = payload.show_description
+        let use_discount = payload.use_discount
+        let sub_cat_discount_type = payload.sub_cat_discount_type
+        let discountValue = payload.discountValue
+
         let insertObj = {
             title,
             sub_cat_slug,
             imgUrl,
             categoryId,
-            discountPercentage: payload.discountPercentage,
+            discountValue: discountValue,
+            sub_cat_description,
+            show_description,
+            use_discount,
+            sub_cat_discount_type
 
         }
         let findCriteria = {
@@ -73,7 +86,11 @@ exports.updateSubCategory = async(req, res, next) => {
         payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
         payload.categoryId ? updateObj.categoryId = payload.categoryId : ""
         payload.isActive == 0 || updateObj.isActive ? updateObj.isActive = payload.isActive : ""
-        payload.discountPercentage ? updateObj.discountPercentage = payload.discountPercentage : ""
+        payload.discountValue ? updateObj.discountValue = payload.discountValue : ""
+        payload.sub_cat_discount_type == 0 || payload.sub_cat_discount_type ? updateObj.sub_cat_discount_type = payload.sub_cat_discount_type : ""
+        payload.sub_cat_description ? updateObj.sub_cat_description = payload.sub_cat_description : ""
+        payload.use_discount == 0 || payload.use_discount ? updateObj.use_discount = payload.use_discount : ""
+        payload.show_description == 0 || payload.show_description ? updateObj.show_description = payload.show_description : ""
 
         if (!sub_cat_obj_id) {
             throw new Error("Sub Cat obj not found")

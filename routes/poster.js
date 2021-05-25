@@ -19,5 +19,8 @@ router.post('/uploadFile', storageUrl.single("imgUrl"), posterControl.uploadFile
 
 router.post('/insertUpdateRating', verifyJwt.verifyJwtToken, posterControl.insertUpdateRating)
 
+router.get('/get_poster_by_author', posterController.getPosterByAuthor)
+
+router.get('/get_poster_by_language', posterController.getPosterByLanguage)
 
 module.exports = router;

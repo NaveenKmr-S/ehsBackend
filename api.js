@@ -14,6 +14,9 @@ const shortid = require("shortid");
 const Razorpay = require("razorpay");
 const cookieParser = require("cookie-parser");
 const app = express();
+const authorController = require("./routes/author")
+const couponController = require("./routes/coupon")
+
 
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
@@ -23,35 +26,6 @@ app.use(cookieParser());
 app.use(cors());
 app.use(helmet());
 
-const razorpay = new Razorpay({
-    key_id: "rzp_test_ci9tXZyyHXxDTT",
-    key_secret: "s1xu1IQ45jPtUBch6wbSkoQL",
-});
-
-app.post("/razorpay", async(req, res) => {
-    const payment_capture = 1;
-    const amount = req.body.amount;
-    const currency = "INR";
-
-    const options = {
-        amount: amount * 100,
-        currency,
-        receipt: shortid.generate(),
-        payment_capture,
-    };
-
-    try {
-        const response = await razorpay.orders.create(options);
-        console.log(response);
-        res.json({
-            id: response.id,
-            currency: response.currency,
-            amount: response.amount / 100,
-        });
-    } catch (error) {
-        console.log(error);
-    }
-});
 
 app.use("/assets/uploads", express.static(__dirname + "/assets/uploads"));
 
@@ -75,6 +49,8 @@ app.use("/category", category);
 app.use("/subCategory", subCategory);
 app.use("/auth", auth);
 app.use("/orders", orders);
+app.use("/author", authorController)
+app.use("/coupons", couponController)
 
 app.get("/", (req, res) => {
     res.status(200).json({

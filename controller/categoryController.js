@@ -13,6 +13,8 @@ exports.getCategory = async(req, res, next) => {
             isActive: 1
         }
         payload.cat_slug ? findCriteria.cat_slug = payload.cat_slug : ""
+        payload.use_discount == 0 || payload.use_discount ? findCriteria.use_discount = payload.use_discount : ""
+        payload.show_description == 0 || payload.show_description ? findCriteria.show_description = payload.show_description : ""
 
         let result = await categoryDb.find(findCriteria).skip(skip).limit(limit)
         return commonFunction.actionCompleteResponse(res, result)
@@ -66,12 +68,21 @@ exports.createCategory = async(req, res, next) => {
         let title = payload.title;
         let cat_slug = commonFunction.autoCreateSlug(title);
         let imgUrl = payload.imgUrl
+        let cat_description = payload.cat_description
+        let show_description = payload.show_description
+        let cat_discount_type = payload.cat_discount_type
+        let discountValue = payload.discountValue
+        let use_discount = payload.use_discount
 
         let insertObj = {
             title,
             cat_slug,
             imgUrl,
-            discountPercentage: payload.discountPercentage,
+            discountValue: discountValue,
+            cat_description,
+            show_description,
+            cat_discount_type,
+            use_discount
         }
         let findCriteria = {
             isActive: 1,
@@ -111,7 +122,12 @@ exports.updateCategory = async(req, res, next) => {
         }
         payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
         payload.isActive == 0 || updateObj.isActive ? updateObj.isActive = payload.isActive : ""
-        payload.discountPercentage ? updateObj.discountPercentage = payload.discountPercentage : ""
+        payload.discountValue ? updateObj.discountValue = payload.discountValue : ""
+        payload.cat_discount_type == 0 || payload.cat_discount_type ? updateObj.cat_discount_type = payload.cat_discount_type : ""
+        payload.cat_description ? updateObj.cat_description = payload.cat_description : ""
+        payload.use_discount == 0 || payload.use_discount ? updateObj.use_discount = payload.use_discount : ""
+        payload.show_description == 0 || payload.show_description ? updateObj.show_description = payload.show_description : ""
+
         if (!cat_obj_id) {
             throw new Error("Sub Cat obj not found")
         }
