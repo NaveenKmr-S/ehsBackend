@@ -20,6 +20,14 @@ const couponsModel = new schema({
         type: String,
         default: ""
     },
+    start_time: {
+        type: Number,
+        default: 0
+    },
+    end_time: {
+        type: Number,
+        default: 0
+    },
     isActive: {
         type: Number,
         default: 1,
