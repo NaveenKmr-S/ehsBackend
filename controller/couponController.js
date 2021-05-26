@@ -32,12 +32,16 @@ exports.createCoupon = async(req, res, next) => {
         let coupon_image = payload.coupon_image
         let coupon_discount_type = payload.coupon_discount_type
         let discountValue = payload.discountValue
+        let start_time = payload.start_time
+        let end_time = payload.end_time
         let insertObj = {
             coupon_name,
             coupon_code,
             coupon_image,
             coupon_discount_type,
-            discountValue
+            discountValue,
+            start_time,
+            end_time
         }
         let findCriteria = {
             isActive: 1,
@@ -79,6 +83,8 @@ exports.updateCoupon = async(req, res, next) => {
         payload.isActive == 0 || updateObj.isActive ? updateObj.isActive = payload.isActive : ""
         payload.coupon_image ? updateObj.coupon_image = payload.coupon_image : ""
         payload.coupon_discount_type ? updateObj.coupon_discount_type = payload.coupon_discount_type : ""
+        payload.end_time ? updateObj.end_time = payload.end_time : ""
+        payload.start_time ? updateObj.start_time = payload.start_time : ""
         payload.discountValue ? updateObj.discountValue = payload.discountValue : ""
         if (!coupon_obj_id) {
             throw new Error("Coupon obj not found")

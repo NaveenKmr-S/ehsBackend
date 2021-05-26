@@ -85,15 +85,6 @@ exports.autoCreateSlug = function(text) {
     if (!text) {
         text = 'slg-' + Math.floor(Math.random() * (999 - 100 + 1) + 100);
     }
-    // $text = preg_replace('~[^\pL\d]+~u', '-', $text); // replace non letter or digits by -
-    // $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text); // transliterate
-    // $text = preg_replace('~[^-\w]+~', '', $text); // remove special characters
-    // $text = trim($text, '-'); // trim
-    // $text = preg_replace('~-+~', '-', $text); // remove duplicate -
-    // $text = strtolower($text); // lowercase
-    // if (empty($text)) {
-    //   return 'n-a';
-    // }
     return text;
 }
 
