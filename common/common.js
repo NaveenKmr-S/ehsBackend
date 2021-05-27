@@ -13,6 +13,11 @@ exports.discountType = {
     PERCENTAGE: 2
 }
 
+exports.vendor_status = {
+    ACCEPTED: 1,
+    NOT_ACCEPTED: 2
+}
+
 exports.paymentStatus = {
     NOUSE: 0,
     INITIATED: 1,

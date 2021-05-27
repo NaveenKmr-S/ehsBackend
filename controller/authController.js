@@ -219,6 +219,9 @@ exports.signUpNew = async(req, res, next) => {
     try {
         let payload = req.body;
         let userName = payload.userName;
+        if (!userName) {
+            throw new Error("Please Provide userName")
+        }
         if (payload.email) {
             let email = payload.email;
             let password = payload.password;
