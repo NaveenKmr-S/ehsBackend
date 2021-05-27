@@ -33,6 +33,9 @@ const ordersModel = new schema({
             quantity: {
                 type: Number,
             },
+            originalPriceBeforeDiscount: {
+                type: Number
+            },
             total: {
                 type: String,
             },

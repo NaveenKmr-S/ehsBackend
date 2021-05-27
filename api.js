@@ -16,7 +16,7 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const authorController = require("./routes/author")
 const couponController = require("./routes/coupon")
-
+const vendorController = require("./routes/venodor")
 
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
@@ -51,6 +51,7 @@ app.use("/auth", auth);
 app.use("/orders", orders);
 app.use("/author", authorController)
 app.use("/coupons", couponController)
+app.use("/vendor", vendorController)
 
 app.get("/", (req, res) => {
     res.status(200).json({
