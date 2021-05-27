@@ -12,6 +12,7 @@ const jwt = require('jsonwebtoken')
 const crypto = require("crypto");
 const configs = require("../configs");
 const client = require("twilio")(configs.accountSID, configs.authToken);
+const couponsDb = require("../model/couponsModel");
 
 
 const razorpay = new Razorpay({
@@ -25,6 +26,24 @@ exports.createOrderNew = async(req, res, next) => {
         let user_obj_id = payload.user_obj_id;
         let cart_item = payload.cart_item;
         let delivery_address = payload.delivery_address
+        let discountValueFIxed = 0;
+        let discountTypeFixed = 6 // random value to check if exists
+        let couponDetails = null
+        if (payload.coupon_code) {
+            let findCriteria = {
+                isActive: 1
+            }
+            findCriteria.coupon_code = payload.coupon_code
+            findCriteria.end_time = {
+                $gt: Date.now()
+            }
+            let resultCoupon = await couponsDb.find(findCriteria)
+            if (resultCoupon && Array.isArray(resultCoupon) && resultCoupon.length) {
+                discountTypeFixed = resultCoupon[0].coupon_discount_type
+                discountValueFIxed = resultCoupon[0].discountValue
+                couponDetails = resultCoupon[0]
+            }
+        }
         if (!(cart_item && Array.isArray(cart_item) && cart_item.length)) {
             throw new Error("Cart is empty");
         }
@@ -72,7 +91,10 @@ exports.createOrderNew = async(req, res, next) => {
                     _id: mongoose.Types.ObjectId(cart_item[i].poster_obj_id),
                     isActive: 1
                 }
-                let posterFound = await posterDb.find(posterFindCriteria).limit(1).exec();
+                let posterFound = await posterDb.find(posterFindCriteria)
+                    .populate("category")
+                    .populate("subCategory")
+                    .limit(1).exec();
                 if (!(posterFound && Array.isArray(posterFound) && posterFound.length)) {
                     throw new Error("poster id is wrong or poster Not Found")
                 }
@@ -84,18 +106,70 @@ exports.createOrderNew = async(req, res, next) => {
                 if (!(materialFind && Array.isArray(materialFind) && materialFind.length)) {
                     throw new Error("poster id is wrong or poster Not Found")
                 }
+
+
                 let materialJsonDetails = materialFind[0]
                 let posterJsonDetails = posterFound[0]
                 let totalPrice = materialJsonDetails.price * cart_item[i].quantity;
+
+
+                //catergory based Discount ---------------------------------------------------------------------
+                let discountsAvailable = []
+                let realPrice = totalPrice
+                let category = posterFound[0].category
+                let subCat = posterFound[0].subCategory
+                if (category && Array.isArray(category) && category.length) {
+                    let catPassTHri = result[0].category[0]
+                    if (catPassTHri.use_discount) {
+                        let pushDis = {
+                            discountType: catPassTHri.cat_discount_type,
+                            discountValue: catPassTHri.discountValue
+                        }
+                        discountsAvailable.push(pushDis)
+                    }
+                }
+
+                if (subCat && Array.isArray(subCat) && subCat.length) {
+                    let subCatArrayToMap = result[0].subCategory
+                    for (let i = 0; i < subCatArrayToMap.length; i++) {
+                        if (subCatArrayToMap[i].use_discount == 1) {
+                            let pushDis = {
+                                discountType: subCatArrayToMap[i].sub_cat_discount_type,
+                                discountValue: subCatArrayToMap[i].discountValue
+                            }
+                            discountsAvailable.push(pushDis)
+                        }
+                    }
+                }
+
+                if (discountsAvailable && Array.isArray(discountsAvailable) && discountsAvailable.length) {
+                    for (let dis = 0; dis < discountsAvailable.length; dis++) {
+                        if (discountsAvailable[dis].discountType == comonRespnses.discountType.FLAT) {
+                            totalPrice = totalPrice - discountsAvailable[dis].discountValue
+                        }
+                        if (discountsAvailable[dis].discountType == comonRespnses.discountType.PERCENTAGE) {
+                            let totalCostToFindAfterDiscount = 100 - parseInt(discountsAvailable[dis].discountValue)
+                            totalPrice = (totalPrice * totalCostToFindAfterDiscount) / 100
+                        }
+                    }
+                }
+
+
+                //+++++++++++++++++++++++++++++++++++ending of cat based discount_______________________________________
+
                 sumPriceToPay += totalPrice;
                 let insertObj = {
                     poster_details: mongoose.Types.ObjectId(cart_item[i].poster_obj_id),
                     materialDimension: mongoose.Types.ObjectId(cart_item[i].material_obj_id),
                     quantity: cart_item[i].quantity,
+                    originalPriceBeforeDiscount: realPrice,
                     total: totalPrice
                 }
                 totalItemsArray.push(insertObj)
             }
+
+
+
             let insertOrderObj = {
                 userId: user_obj_id,
                 user_type_order: comonRespnses.userType.REGISTERED_USER,
@@ -111,6 +185,37 @@ exports.createOrderNew = async(req, res, next) => {
                 },
                 paymentStatus: comonRespnses.paymentStatus.INITIATED,
                 orderStatus: comonRespnses.orderStatus.INITIATED
+            }
+
+            //discountpart
+
+            if (discountTypeFixed != 6) {
+                if (discountTypeFixed == comonRespnses.discountType.FLAT) {
+                    sumPriceToPay = sumPriceToPay - parseInt(discountValueFIxed)
+                    insertOrderObj.sumPriceToPay = sumPriceToPay
+                    insertOrderObj.is_coupon_applied = 1
+                    insertOrderObj.couponDetails = {
+                        coupon_obj_id: couponDetails._id,
+                        coupon_code: couponDetails.coupon_code,
+                        couponDiscountType: comonRespnses.discountType.FLAT,
+                        coupon_discount_value: discountValueFIxed
+                    }
+                    insertOrderObj.price_before_discount = sumPriceToPay
+                }
+                if (discountTypeFixed == comonRespnses.discountType.PERCENTAGE) {
+                    let totalCostToFindAfterDiscount = 100 - parseInt(discountValueFIxed)
+                    sumPriceToPay = (sumPriceToPay * totalCostToFindAfterDiscount) / 100
+                    sumPriceToPay = parseInt(sumPriceToPay)
+                    insertOrderObj.sumPriceToPay = sumPriceToPay
+                    insertOrderObj.is_coupon_applied = 1
+                    insertOrderObj.couponDetails = {
+                        coupon_obj_id: couponDetails._id,
+                        coupon_code: couponDetails.coupon_code,
+                        couponDiscountType: comonRespnses.discountType.FLAT,
+                        coupon_discount_value: discountValueFIxed
+                    }
+                    insertOrderObj.price_before_discount = sumPriceToPay
+                }
             }
             const options = {
                 amount: sumPriceToPay * 100,
@@ -161,11 +266,57 @@ exports.createOrderNew = async(req, res, next) => {
                 let materialJsonDetails = materialFind[0]
                 let posterJsonDetails = posterFound[0]
                 let totalPrice = materialJsonDetails.price * cart_item[i].quantity;
+
+                //catergory based Discount ---------------------------------------------------------------------
+                let discountsAvailable = []
+                let realPrice = totalPrice
+                let category = posterFound[0].category
+                let subCat = posterFound[0].subCategory
+                if (category && Array.isArray(category) && category.length) {
+                    let catPassTHri = result[0].category[0]
+                    if (catPassTHri.use_discount) {
+                        let pushDis = {
+                            discountType: catPassTHri.cat_discount_type,
+                            discountValue: catPassTHri.discountValue
+                        }
+                        discountsAvailable.push(pushDis)
+                    }
+                }
+
+                if (subCat && Array.isArray(subCat) && subCat.length) {
+                    let subCatArrayToMap = result[0].subCategory
+                    for (let i = 0; i < subCatArrayToMap.length; i++) {
+                        if (subCatArrayToMap[i].use_discount == 1) {
+                            let pushDis = {
+                                discountType: subCatArrayToMap[i].sub_cat_discount_type,
+                                discountValue: subCatArrayToMap[i].discountValue
+                            }
+                            discountsAvailable.push(pushDis)
+                        }
+                    }
+                }
+
+                if (discountsAvailable && Array.isArray(discountsAvailable) && discountsAvailable.length) {
+                    for (let dis = 0; dis < discountsAvailable.length; dis++) {
+                        if (discountsAvailable[dis].discountType == comonRespnses.discountType.FLAT) {
+                            totalPrice = totalPrice - discountsAvailable[dis].discountValue
+                        }
+                        if (discountsAvailable[dis].discountType == comonRespnses.discountType.PERCENTAGE) {
+                            let totalCostToFindAfterDiscount = 100 - parseInt(discountsAvailable[dis].discountValue)
+                            totalPrice = (totalPrice * totalCostToFindAfterDiscount) / 100
+                        }
+                    }
+                }
+
+
+                //+++++++++++++++++++++++++++++++++++ending of cat based discount_______________________________________
+
                 sumPriceToPay += totalPrice;
                 let insertObj = {
                     poster_details: mongoose.Types.ObjectId(cart_item[i].poster_obj_id),
                     materialDimension: mongoose.Types.ObjectId(cart_item[i].material_obj_id),
                     quantity: cart_item[i].quantity,
+                    originalPriceBeforeDiscount: realPrice,
                     total: totalPrice
                 }
                 totalItemsArray.push(insertObj)
@@ -188,6 +339,36 @@ exports.createOrderNew = async(req, res, next) => {
             payload.phonenumber ? insertOrderObj.phonenumber = payload.phonenumber : ""
             payload.email ? insertOrderObj.emailid = payload.email : ""
             payload.name ? insertOrderObj.Name = payload.name : ""
+                //discountpart
+
+            if (discountTypeFixed != 6) {
+                if (discountTypeFixed == comonRespnses.discountType.FLAT) {
+                    sumPriceToPay = sumPriceToPay - parseInt(discountValueFIxed)
+                    insertOrderObj.sumPriceToPay = sumPriceToPay
+                    insertOrderObj.is_coupon_applied = 1
+                    insertOrderObj.couponDetails = {
+                        coupon_obj_id: couponDetails._id,
+                        coupon_code: couponDetails.coupon_code,
+                        couponDiscountType: comonRespnses.discountType.FLAT,
+                        coupon_discount_value: discountValueFIxed
+                    }
+                    insertOrderObj.price_before_discount = sumPriceToPay
+                }
+                if (discountTypeFixed == comonRespnses.discountType.PERCENTAGE) {
+                    let totalCostToFindAfterDiscount = 100 - parseInt(discountValueFIxed)
+                    sumPriceToPay = (sumPriceToPay * totalCostToFindAfterDiscount) / 100
+                    sumPriceToPay = parseInt(sumPriceToPay)
+                    insertOrderObj.sumPriceToPay = sumPriceToPay
+                    insertOrderObj.is_coupon_applied = 1
+                    insertOrderObj.couponDetails = {
+                        coupon_obj_id: couponDetails._id,
+                        coupon_code: couponDetails.coupon_code,
+                        couponDiscountType: comonRespnses.discountType.FLAT,
+                        coupon_discount_value: discountValueFIxed
+                    }
+                    insertOrderObj.price_before_discount = sumPriceToPay
+                }
+            }
 
             const options = {
                 amount: sumPriceToPay * 100,

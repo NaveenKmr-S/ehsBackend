@@ -2,6 +2,27 @@ const couponsDb = require("../model/couponsModel");
 const commonFunction = require("../common/common")
 const mongoose = require("mongoose");
 
+exports.applyCoupon = async(req, res, next) => {
+    try {
+        let payload = req.query
+        let findCriteria = {
+            isActive: 1
+        }
+        if (!payload.couponCode) {
+            throw new Error("Coupon code not entered")
+        }
+        findCriteria.coupon_code = payload.couponCode
+        findCriteria.end_time = {
+            $gt: Date.now()
+        }
+        let result = await couponsDb.find(findCriteria)
+        return commonFunction.actionCompleteResponse(res, result)
+    } catch (err) {
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
+
+    }
+}
+
 
 exports.getCoupon = async(req, res, next) => {
     try {

@@ -39,6 +39,30 @@ const ordersModel = new schema({
         }],
         default: []
     },
+    is_coupon_applied: {
+        type: Number,
+        default: 0
+    },
+    price_before_discount: {
+        type: Number,
+        default: 0
+    },
+    couponDetails: {
+        coupon_obj_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "coupons",
+        },
+        coupon_code: {
+            type: String,
+            default: ""
+        },
+        couponDiscountType: {
+            type: Number
+        },
+        coupon_discount_value: {
+            type: String
+        }
+    },
     sumPriceToPay: {
         type: String,
     },

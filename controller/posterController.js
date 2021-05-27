@@ -34,14 +34,18 @@ exports.getPosterByAuthor = async(req, res, next) => {
                 $in: [mongoose.Types.ObjectId(author_obj_id)]
             }
         }
+
         let result = await posterDb.find(findCriteria)
             .populate("category")
             .populate("subCategory")
             .populate("materialDimension").skip(skip).limit(limit)
+        let count = 0
+        count = await posterDb.countDocuments(findCriteria)
 
         let respoSeRSend = {
             authorDetails: authorFound[0],
-            postersOfAuthor: result
+            postersOfAuthor: result,
+            count: count
         }
         return commonFunction.actionCompleteResponse(res, respoSeRSend)
     } catch (err) {
@@ -143,7 +147,7 @@ exports.createPoster = async(req, res, next) => {
             materialDimension: payload.materialDimension,
             tags: payload.tags,
             link: payload.link,
-            sku: payload.sku,
+            // sku: payload.sku,
             weight: payload.weight,
             additionalDetails: payload.additionalDetails,
             bestSeller: payload.bestSeller,
@@ -153,10 +157,41 @@ exports.createPoster = async(req, res, next) => {
             orginal_one_drive_link: payload.orginal_one_drive_link,
             poster_language_connector: payload.poster_language_connector
         };
+        if (!(insertObj.category && Array.isArray(insertObj.category) && insertObj.category.length)) {
+            throw new Error("Please Select the Category")
+        }
+
+        let nameToAppend = "";
+        let catIds = []
+        for (let i = 0; i < insertObj.category.length; i++) {
+            let findCr = {
+                isActive: 1,
+                _id: mongoose.Types.ObjectId(insertObj.category[i])
+            }
+            catIds.push(mongoose.Types.ObjectId(insertObj.category[i]))
+            let catF = await categoryDb.find(findCr).limit(1)
+            if (catF && Array.isArray(catF) && catF.length) {
+                nameToAppend = catF[0].title
+            } else {
+                throw new Erroe("Invalaid Categeory Id")
+            }
+        }
+
         if (!insertObj.name) {
             throw new Error("Give a proper poster name");
         }
+        let count = 0
+        let findPosterCount = {
+            isActive: 1,
+            category: {
+                $in: catIds
+            }
+        }
+        count = await posterDb.countDocuments(findPosterCount)
+        insertObj.name = nameToAppend + " | " + insertObj.name + " | " + nameToAppend[0] + "_" + count
         insertObj.slug = commonFunction.autoCreateSlug(insertObj.name)
+        insertObj.sku = commonFunction.autoCreateSlug(insertObj.name)
+
         let posterAldreadyFound = await posterDb.find({ slug: insertObj.slug, isActive: 1 }).limit(1).exec()
         if (posterAldreadyFound && Array.isArray(posterAldreadyFound) && posterAldreadyFound.length) {
             throw new Error("Poster name already exists")
@@ -323,7 +358,13 @@ exports.getPosterBySubCategory = async(req, res, next) => {
             }
             payload.bestseller ? posterFindCriteria.bestSeller = payload.bestseller : ""
             let postersExists = await posterDb.find(posterFindCriteria).skip(skip).limit(limit)
-            return commonFunction.actionCompleteResponse(res, postersExists)
+            let count = 0
+            count = await posterDb.countDocuments(posterFindCriteria)
+            let resu = {
+                postersExists: postersExists,
+                count: count
+            }
+            return commonFunction.actionCompleteResponse(res, resu)
 
         } else if (findCriteria._id || findCriteria.sub_cat_slug) {
             let subcatResult = await subCategoryDb.find(findCriteria).limit(1).exec()
@@ -338,7 +379,13 @@ exports.getPosterBySubCategory = async(req, res, next) => {
             }
             payload.bestseller ? posterFindCriteria.bestSeller = payload.bestseller : ""
             let postersExists = await posterDb.find(posterFindCriteria).populate("materialDimension").skip(skip).limit(limit)
-            return commonFunction.actionCompleteResponse(res, postersExists)
+            let count = 0
+            count = await posterDb.countDocuments(posterFindCriteria)
+            let resu = {
+                postersExists: postersExists,
+                count: count
+            }
+            return commonFunction.actionCompleteResponse(res, resu)
 
         } else {
             throw new Error("Not Data Available, Enter Proper Data")
@@ -367,7 +414,13 @@ exports.getPosterByLanguage = async(req, res, next) => {
             .populate("subCategory")
             .populate("authors")
             .populate("materialDimension").skip(skip).limit(limit)
-        return commonFunction.actionCompleteResponse(res, result)
+        let count = 0
+        count = await posterDb.countDocuments(findCriteria)
+        let resu = {
+            postersExists: result,
+            count: count
+        }
+        return commonFunction.actionCompleteResponse(res, resu)
 
     } catch (err) {
         return commonFunction.sendActionFailedResponse(res, null, err.message)
@@ -389,7 +442,11 @@ exports.getPoster = async(req, res, next) => {
             .populate("subCategory")
             .populate("authors")
             .populate("materialDimension").skip(skip).limit(limit)
-        return commonFunction.actionCompleteResponse(res, result)
+        let resu = {
+            postersExists: result,
+            count: count
+        }
+        return commonFunction.actionCompleteResponse(res, resu)
 
     } catch (err) {
         return commonFunction.sendActionFailedResponse(res, null, err.message)
