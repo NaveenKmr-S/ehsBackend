@@ -39,6 +39,7 @@ exports.updateWishList = async(req, res, next) => {
             let updateCriteria = {}
             payload.poster_obj_id ? updateCriteria.$addToSet = {...updateCriteria.$addToSet, wishList: payload.poster_obj_id } : ""
             payload.address ? updateCriteria.$addToSet = {...updateCriteria.$addToSet, address: payload.address } : ""
+            payload.editAddress ? updateCriteria.address = payload.editAddress : ""
             let userResult = await userDb.findOneAndUpdate(findCriteria, updateCriteria, { new: true })
             return commonFunction.actionCompleteResponse(res, userResult)
 
