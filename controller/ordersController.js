@@ -119,7 +119,7 @@ exports.createOrderNew = async(req, res, next) => {
                 let category = posterFound[0].category
                 let subCat = posterFound[0].subCategory
                 if (category && Array.isArray(category) && category.length) {
-                    let catPassTHri = result[0].category[0]
+                    let catPassTHri = posterFound[0].category[0]
                     if (catPassTHri.use_discount) {
                         let pushDis = {
                             discountType: catPassTHri.cat_discount_type,
@@ -130,7 +130,7 @@ exports.createOrderNew = async(req, res, next) => {
                 }
 
                 if (subCat && Array.isArray(subCat) && subCat.length) {
-                    let subCatArrayToMap = result[0].subCategory
+                    let subCatArrayToMap = posterFound[0].subCategory
                     for (let i = 0; i < subCatArrayToMap.length; i++) {
                         if (subCatArrayToMap[i].use_discount == 1) {
                             let pushDis = {
@@ -397,7 +397,7 @@ exports.createOrderNew = async(req, res, next) => {
         }
     } catch (err) {
         console.log(err);
-        return comonRespnses.sendActionFailedResponse(res, null, error.message)
+        return comonRespnses.sendActionFailedResponse(res, null, err.message)
 
     }
 }

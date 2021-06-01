@@ -26,6 +26,65 @@ exports.getUsers = (req, res, next) => {
         });
 };
 
+exports.updateUserDeailsNew = async(req, res, next) => {
+    try {
+        let payload = req.body;
+        let updateObj = payload.updateObj;
+        let user_obj_id = req.userId
+
+        payload.name ? updateObj.name = payload.name : ""
+        payload.confromPass ? updateObj.confromPass = payload.confromPass : ""
+        payload.passwordSet ? updateObj.passwordSet = payload.passwordSet : ""
+
+
+        //payload.changePass should be 1 if you want to change pass 
+        let changePass = payload.changePass || 0
+        if (changePass && payload.oldPassword && payload.passwordSet) {
+            if (payload.confromPass !== payload.passwordSet) {
+                throw new Error("Confrom and set password Mismtach")
+            }
+            let findCriteria = {
+                _id: mongoose.Types.ObjectId(user_obj_id)
+            }
+            let userResult = await userDb.find(findCriteria)
+            if (!(userResult && Array.isArray(userResult) && userResult.length)) {
+                throw new Error('Invalid User')
+            }
+
+            let isMatched = await bcrypt.compare(payload.oldPassword, userResult[0].password)
+            if (!isMatched) {
+                throw new Error(" Password is Incorrect Cant Change")
+            }
+            let passwordHash = await bcrypt.hash(updateObj.passwordSet, saltRounds)
+            let updateCriteria = {
+                password: passwordHash,
+
+            }
+            let userAdded = await userDb.findOneAndUpdate(findCriteria, updateCriteria, { new: true })
+            let response = {
+                info: "Password Changed Successfully !!"
+            }
+            return commonFunction.actionCompleteResponse(res, response)
+
+
+        }
+        delete updateObj.confromPass;
+        delete updateObj.passwordSet;
+
+        let findCriteria = {
+            _id: mongoose.Types.ObjectId(user_obj_id)
+        }
+        let userAdded = await userDb.findOneAndUpdate(findCriteria, updateObj, { new: true })
+        let response = {
+            info: "User Details Updated"
+        }
+        return commonFunction.actionCompleteResponse(res, response)
+    } catch (err) {
+        console.log(err)
+        return commonFunction.sendActionFailedResponse(res, null, err.message)
+    }
+}
+
 exports.updateWishList = async(req, res, next) => {
     try {
         let user_obj_id = req.userId
@@ -39,6 +98,7 @@ exports.updateWishList = async(req, res, next) => {
             let updateCriteria = {}
             payload.poster_obj_id ? updateCriteria.$addToSet = {...updateCriteria.$addToSet, wishList: payload.poster_obj_id } : ""
             payload.address ? updateCriteria.$addToSet = {...updateCriteria.$addToSet, address: payload.address } : ""
+            payload.editAddress ? updateCriteria.address = payload.editAddress : ""
             let userResult = await userDb.findOneAndUpdate(findCriteria, updateCriteria, { new: true })
             return commonFunction.actionCompleteResponse(res, userResult)
 
