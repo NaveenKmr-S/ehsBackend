@@ -28,7 +28,7 @@ exports.createAuthor = async(req, res, next) => {
     try {
         let payload = req.body;
         let author_name = payload.author_name;
-        let author_slug = commonFunction.autoCreateSlug(title);
+        let author_slug = commonFunction.autoCreateSlug(author_name);
         let auth_image = payload.auth_image
         let author_description = payload.author_description
         let author_designation = payload.author_designation

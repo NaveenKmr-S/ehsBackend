@@ -442,11 +442,12 @@ exports.getPoster = async(req, res, next) => {
             .populate("subCategory")
             .populate("authors")
             .populate("materialDimension").skip(skip).limit(limit)
-        let resu = {
-            postersExists: result,
-            count: count
-        }
-        return commonFunction.actionCompleteResponse(res, resu)
+
+        // let resu = {
+        //     postersExists: result,
+        //     count: count
+        // }
+        return commonFunction.actionCompleteResponse(res, result)
 
     } catch (err) {
         return commonFunction.sendActionFailedResponse(res, null, err.message)
