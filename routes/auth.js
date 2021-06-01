@@ -18,7 +18,7 @@ router.get('/get_user_details_by_id', verifyJwt.verifyJwtToken, auth.getUserDeta
 router.post('/add_user_details', verifyJwt.verifyJwtToken, auth.updateWishList)
 
 // router.post("/resetPassOtp", auth.checkIfUserExist, auth.getOtp);
-
+router.post('/update_user_details', verifyJwt.verifyJwtToken, auth.updateUserDeailsNew)
 
 router.post("/resetPassword", auth.resetPassword);
 

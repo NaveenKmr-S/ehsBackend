@@ -397,7 +397,7 @@ exports.createOrderNew = async(req, res, next) => {
         }
     } catch (err) {
         console.log(err);
-        return comonRespnses.sendActionFailedResponse(res, null, error.message)
+        return comonRespnses.sendActionFailedResponse(res, null, err.message)
 
     }
 }
