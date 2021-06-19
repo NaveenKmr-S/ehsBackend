@@ -8,6 +8,11 @@ let responseMessages = {
 
 };
 
+exports.mongoUrl = {
+    OLD: "mongodb+srv://balu:mongopassword@cluster0.6ujrr.mongodb.net/example?retryWrites=true&w=majority",
+    NEW: "mongodb+srv://ehs-admin:MDCyOxZz7WkyWK53@lab-1.xjs8i.mongodb.net/ehs-prints?retryWrites=true&w=majority"
+}
+
 exports.discountType = {
     FLAT: 1,
     PERCENTAGE: 2

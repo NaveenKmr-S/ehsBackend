@@ -17,6 +17,8 @@ const app = express();
 const authorController = require("./routes/author")
 const couponController = require("./routes/coupon")
 const vendorController = require("./routes/venodor")
+const configs = require('./common/common')
+
 
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
@@ -63,7 +65,7 @@ app.get("/", (req, res) => {
 mongoose
     .connect(
         // "mongodb://localhost:27017/ehsdb",
-        "mongodb+srv://balu:mongopassword@cluster0.6ujrr.mongodb.net/example?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true }
+        configs.mongoUrl.NEW, { useNewUrlParser: true, useUnifiedTopology: true }
     )
     .then(() => {
         console.log("DB Connected!!!")
