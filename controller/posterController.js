@@ -11,8 +11,8 @@ exports.getPosterByAuthor = async(req, res, next) => {
     try {
         let payload = req.query
 
-        let skip = payload.skip || 0
-        let limit = payload.limit || 20
+        let skip = parseInt(payload.skip) || 0
+        let limit = parseInt(payload.limit) || 20
         let author_slug = payload.author_slug
 
         if (!author_slug) {
@@ -338,8 +338,8 @@ exports.getPosterBySubCategory = async(req, res, next) => {
         let findCriteria = {
             isActive: 1
         }
-        let skip = payload.skip || 0
-        let limit = payload.limit || 20
+        let skip = parseInt(payload.skip) || 0
+        let limit = parseInt(payload.limit) || 20
         payload.category_slug ? findCriteria.cat_slug = payload.category_slug : ""
         payload.cat_obj_id ? findCriteria._id = mongoose.Types.ObjectId(payload.cat_obj_id) : ""
         payload.subCategorySlug ? findCriteria.sub_cat_slug = payload.subCategorySlug : ""
@@ -357,7 +357,11 @@ exports.getPosterBySubCategory = async(req, res, next) => {
                 }
             }
             payload.bestseller ? posterFindCriteria.bestSeller = payload.bestseller : ""
-            let postersExists = await posterDb.find(posterFindCriteria).skip(skip).limit(limit)
+            let postersExists = await posterDb.find(posterFindCriteria)
+                .populate("category")
+                .populate("subCategory")
+                .populate("authors")
+                .populate("materialDimension").skip(skip).limit(limit)
             let count = 0
             count = await posterDb.countDocuments(posterFindCriteria)
             let resu = {
@@ -378,7 +382,11 @@ exports.getPosterBySubCategory = async(req, res, next) => {
                 }
             }
             payload.bestseller ? posterFindCriteria.bestSeller = payload.bestseller : ""
-            let postersExists = await posterDb.find(posterFindCriteria).populate("materialDimension").skip(skip).limit(limit)
+            let postersExists = await posterDb.find(posterFindCriteria)
+                .populate("category")
+                .populate("subCategory")
+                .populate("authors")
+                .populate("materialDimension").skip(skip).limit(limit)
             let count = 0
             count = await posterDb.countDocuments(posterFindCriteria)
             let resu = {
@@ -402,8 +410,8 @@ exports.getPosterByLanguage = async(req, res, next) => {
         let findCriteria = {
             isActive: 1
         }
-        let skip = payload.skip || 0
-        let limit = payload.limit || 20
+        let skip = parseInt(payload.skip) || 0
+        let limit = parseInt(payload.limit) || 20
         let language = payload.language
         if (!language) {
             throw new Error("Pass in the language key")
@@ -435,19 +443,21 @@ exports.getPoster = async(req, res, next) => {
         let findCriteria = {
             isActive: 1
         }
-        let skip = payload.skip || 0
-        let limit = payload.limit || 20
+        let skip = parseInt(payload.skip) || 0
+        let limit = parseInt(payload.limit) || 20
         let result = await posterDb.find(findCriteria)
             .populate("category")
             .populate("subCategory")
             .populate("authors")
             .populate("materialDimension").skip(skip).limit(limit)
 
-        // let resu = {
-        //     postersExists: result,
-        //     count: count
-        // }
-        return commonFunction.actionCompleteResponse(res, result)
+        let count = 0;
+        count = await posterDb.countDocuments(findCriteria)
+        let resu = {
+            postersExists: result,
+            count: count
+        }
+        return commonFunction.actionCompleteResponse(res, resu)
 
     } catch (err) {
         return commonFunction.sendActionFailedResponse(res, null, err.message)
@@ -535,12 +545,14 @@ exports.updatePoster = async(req, res, next) => {
 
 exports.uploadFile = async(req, res, next) => {
     try {
-        let imgUrl = `${req.protocol}://${req.get("host")}/${req.file.destination + req.file.filename}`;
+        console.log(req.file)
+
+        // let imgUrl = `${req.protocol}://${req.get("host")}/${req.file.destination + req.file.filename}`;
 
         let responseObj = {
-            fileSavedUrl: imgUrl,
-            destination: req.file.destination,
-            fileName: req.file.filename
+            fileSavedUrl: req.file.location,
+            destination: req.file.location,
+            fileName: req.file.originalname
         }
         return commonFunction.actionCompleteResponse(res, responseObj)
 

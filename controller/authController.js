@@ -29,7 +29,7 @@ exports.getUsers = (req, res, next) => {
 exports.updateUserDeailsNew = async(req, res, next) => {
     try {
         let payload = req.body;
-        let updateObj = payload.updateObj;
+        let updateObj = {};
         let user_obj_id = req.userId
 
         payload.name ? updateObj.name = payload.name : ""

@@ -53,9 +53,9 @@ exports.updateMaterial = async(req, res, next) => {
         }
         let updateObj = {};
         material_title ? updateObj.material_title = material_title : ""
-        material_imgUrl ? updateObj.material_img_url = material_img_url : ""
+        material_imgUrl ? updateObj.material_img_url = material_imgUrl : ""
         dimension_title ? updateObj.dimension_title = dimension_title : ""
-        dimension_imgUrl ? updateObj.dimension_img_url = dimension_img_url : ""
+        dimension_imgUrl ? updateObj.dimension_img_url = dimension_imgUrl : ""
         payload.isActive == 0 || payload.isActive ? updateObj.isActive = payload.isActive : ""
         price ? updateObj.price = price : ""
         let result = await materialDimensionDb.update({ _id: material_obj_id }, updateObj, { new: false })

@@ -11,6 +11,6 @@ router.post('/createCoupon', couponControll.createCoupon);
 
 router.post('/updateCoupon', couponControll.updateCoupon);
 
-router.post('/applyCoupon', couponControll.applyCoupon);
+router.get('/applyCoupon', couponControll.applyCoupon);
 
 module.exports = router;
