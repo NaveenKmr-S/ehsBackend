@@ -11,28 +11,28 @@ const Counters = require("../model/counterModel");
 
 
 function getNextSequenceValue(sequenceName) {
-	console.log("sequenceName", sequenceName)
-	return new Promise((resolve, reject) => {
+    console.log("sequenceName", sequenceName)
+    return new Promise((resolve, reject) => {
 
-		// let collection = db.collection('counters');
-		Counters.collection.findAndModify(
-			{ "_id": sequenceName },
-			[],
-			{ "$inc": { sequence_value: 1 } },
-			{ upsert: true, new: true },
-			function (err, result) {
-				if (result && result.value && result.value.sequence_value) {
-					return resolve(parseInt(result.value.sequence_value));
-				} else {
-					return reject(err || "Something went wrong")
-				}
+        // let collection = db.collection('counters');
+        Counters.collection.findAndModify(
+            { "_id": sequenceName },
+            [],
+            { "$inc": { sequence_value: 1 } },
+            { upsert: true, new: true },
+            function (err, result) {
+                if (result && result.value && result.value.sequence_value) {
+                    return resolve(parseInt(result.value.sequence_value));
+                } else {
+                    return reject(err || "Something went wrong")
+                }
 
-			}
-		);
+            }
+        );
 
-	});
+    });
 }
-exports.getPosterByAuthor = async(req, res, next) => {
+exports.getPosterByAuthor = async (req, res, next) => {
     try {
         let payload = req.query
 
@@ -78,7 +78,7 @@ exports.getPosterByAuthor = async(req, res, next) => {
     }
 }
 
-exports.insertUpdateRating = async(req, res, next) => {
+exports.insertUpdateRating = async (req, res, next) => {
     try {
         let payload = req.body
         let userObjId = req.userId;
@@ -156,7 +156,7 @@ exports.insertUpdateRating = async(req, res, next) => {
     }
 }
 
-exports.createPoster = async(req, res, next) => {
+exports.createPoster = async (req, res, next) => {
     try {
         let payload = req.body;
         let insertObj = {
@@ -206,7 +206,7 @@ exports.createPoster = async(req, res, next) => {
 
         //sub category name
         let subCatNameToAppend = ""
-        for(let i=0 ; i < insertObj.subCategory.length ; i++) {
+        for (let i = 0; i < insertObj.subCategory.length; i++) {
             let findCr = {
                 isActive: 1,
                 _id: mongoose.Types.ObjectId(insertObj.subCategory[i])
@@ -219,15 +219,21 @@ exports.createPoster = async(req, res, next) => {
             }
         }
 
-        let count = await   getNextSequenceValue("posters")
-        console.log(count)
-       
-        insertObj.name = nameToAppend + " | "  + nameToAppend[0] + "_" + count
-        if(subCatNameToAppend !== ""){
-            insertObj.name = nameToAppend +  subCatNameToAppend + " | " + nameToAppend[0] + "_" + count
+        if (!insertObj.name) {
+            throw new Error("Name required for insert");
         }
-        insertObj.slug = commonFunction.autoCreateSlugPosters(insertObj.name ,count)
-        insertObj.sku = commonFunction.autoCreateSlugPosters(insertObj.name , count)
+
+        // let count = await getNextSequenceValue("posters")
+        // console.log(count)
+
+        let count = insertObj.name
+
+        insertObj.name = nameToAppend + " | " + nameToAppend[0] + "_" + insertObj.name
+        if (subCatNameToAppend !== "") {
+            insertObj.name = nameToAppend + subCatNameToAppend + " | " + nameToAppend[0] + "_" + insertObj.name
+        }
+        insertObj.slug = commonFunction.autoCreateSlugPosters(insertObj.name, count)
+        insertObj.sku = commonFunction.autoCreateSlugPosters(insertObj.name, count)
 
         let posterAldreadyFound = await posterDb.find({ slug: insertObj.slug, isActive: 1 }).limit(1).exec()
         if (posterAldreadyFound && Array.isArray(posterAldreadyFound) && posterAldreadyFound.length) {
@@ -243,7 +249,7 @@ exports.createPoster = async(req, res, next) => {
     }
 };
 
-exports.getPosterById = async(req, res, next) => {
+exports.getPosterById = async (req, res, next) => {
     try {
         let payload = req.query;
         let findCriteria = {
@@ -323,27 +329,27 @@ exports.getPosterById = async(req, res, next) => {
         }]
 
         let arrRatings = [{
-                "$match": findCriteria
-            },
-            {
-                "$unwind": "$rating"
-            },
-            {
-                $group: {
-                    _id: "$rating.rating",
-                    "sumvalues": {
-                        "$sum": 1
-                    }
-                }
-            },
-            {
-                "$project": {
-                    _id: 0,
-                    rating: "$_id",
-                    count: "$sumvalues",
-
+            "$match": findCriteria
+        },
+        {
+            "$unwind": "$rating"
+        },
+        {
+            $group: {
+                _id: "$rating.rating",
+                "sumvalues": {
+                    "$sum": 1
                 }
             }
+        },
+        {
+            "$project": {
+                _id: 0,
+                rating: "$_id",
+                count: "$sumvalues",
+
+            }
+        }
         ]
         let posterRating = await posterDb.aggregate(aggreg)
         let ratingWiseMembers = await posterDb.aggregate(arrRatings)
@@ -369,7 +375,7 @@ exports.getPosterById = async(req, res, next) => {
     }
 };
 
-exports.getPosterBySubCategory = async(req, res, next) => {
+exports.getPosterBySubCategory = async (req, res, next) => {
     try {
         let payload = req.query
         let findCriteria = {
@@ -441,7 +447,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
     }
 };
 
-exports.getPosterByLanguage = async(req, res, next) => {
+exports.getPosterByLanguage = async (req, res, next) => {
     try {
         let payload = req.query
         let findCriteria = {
@@ -473,7 +479,7 @@ exports.getPosterByLanguage = async(req, res, next) => {
     }
 }
 
-exports.getPoster = async(req, res, next) => {
+exports.getPoster = async (req, res, next) => {
 
     try {
         let payload = req.query
@@ -502,7 +508,7 @@ exports.getPoster = async(req, res, next) => {
     }
 };
 
-exports.updatePoster = async(req, res, next) => {
+exports.updatePoster = async (req, res, next) => {
     try {
         let payload = req.body;
         let poster_obj_id = payload.poster_obj_id;
@@ -536,22 +542,22 @@ exports.updatePoster = async(req, res, next) => {
             switch (payload.operationType) {
                 case commonFunction.operationType.PUSH:
                     {
-                        payload.category ? updateObj.$addToSet = {...updateObj.$addToSet, category: payload.category } : ""
-                        payload.subCategory ? updateObj.$addToSet = {...updateObj.$addToSet, subCategory: payload.subCategory } : ""
-                        payload.tags ? updateObj.$addToSet = {...updateObj.$addToSet, tags: payload.tags } : ""
-                        payload.materialDimension ? updateObj.$addToSet = {...updateObj.$addToSet, materialDimension: payload.materialDimension } : ""
-                        payload.imgUrl ? updateObj.$addToSet = {...updateObj.$addToSet, imgUrl: payload.imgUrl } : ""
-                        payload.poster_language_connector ? updateObj.$addToSet = {...updateObj.$addToSet, poster_language_connector: payload.poster_language_connector } : ""
+                        payload.category ? updateObj.$addToSet = { ...updateObj.$addToSet, category: payload.category } : ""
+                        payload.subCategory ? updateObj.$addToSet = { ...updateObj.$addToSet, subCategory: payload.subCategory } : ""
+                        payload.tags ? updateObj.$addToSet = { ...updateObj.$addToSet, tags: payload.tags } : ""
+                        payload.materialDimension ? updateObj.$addToSet = { ...updateObj.$addToSet, materialDimension: payload.materialDimension } : ""
+                        payload.imgUrl ? updateObj.$addToSet = { ...updateObj.$addToSet, imgUrl: payload.imgUrl } : ""
+                        payload.poster_language_connector ? updateObj.$addToSet = { ...updateObj.$addToSet, poster_language_connector: payload.poster_language_connector } : ""
                     }
                     break;
                 case commonFunction.operationType.PULL:
                     {
-                        payload.category ? updateObj.$pull = {...updateObj.$pull, category: payload.category } : ""
-                        payload.subCategory ? updateObj.$pull = {...updateObj.$pull, subCategory: payload.subCategory } : ""
-                        payload.tags ? updateObj.$pull = {...updateObj.$pull, tags: payload.tags } : ""
-                        payload.materialDimension ? updateObj.$pull = {...updateObj.$pull, materialDimension: payload.materialDimension } : ""
-                        payload.imgUrl ? updateObj.$pull = {...updateObj.$pull, imgUrl: payload.imgUrl } : ""
-                        payload.poster_language_connector ? updateObj.$pull = {...updateObj.$pull, poster_language_connector: payload.poster_language_connector } : ""
+                        payload.category ? updateObj.$pull = { ...updateObj.$pull, category: payload.category } : ""
+                        payload.subCategory ? updateObj.$pull = { ...updateObj.$pull, subCategory: payload.subCategory } : ""
+                        payload.tags ? updateObj.$pull = { ...updateObj.$pull, tags: payload.tags } : ""
+                        payload.materialDimension ? updateObj.$pull = { ...updateObj.$pull, materialDimension: payload.materialDimension } : ""
+                        payload.imgUrl ? updateObj.$pull = { ...updateObj.$pull, imgUrl: payload.imgUrl } : ""
+                        payload.poster_language_connector ? updateObj.$pull = { ...updateObj.$pull, poster_language_connector: payload.poster_language_connector } : ""
 
                     }
                     break;
@@ -580,7 +586,7 @@ exports.updatePoster = async(req, res, next) => {
     }
 };
 
-exports.uploadFile = async(req, res, next) => {
+exports.uploadFile = async (req, res, next) => {
     try {
         console.log(req.file)
 
