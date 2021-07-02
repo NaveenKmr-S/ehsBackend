@@ -1,3 +1,7 @@
+
+
+
+
 let responseMessages = {
     PARAMETER_MISSING: "Insufficient information was supplied. Please check and try again.",
     ACTION_COMPLETE: "Successful",
@@ -96,6 +100,20 @@ exports.autoCreateSlug = function(text) {
         text = 'slg-' + Math.floor(Math.random() * (999 - 100 + 1) + 100);
     }
     return text;
+}
+
+exports.autoCreateSlugPosters = function(text , count) {
+    text = "" + text // toString
+    text = text.replace(/[^a-zA-Z ]/g, ""); // replace all special char 
+    text = text.replace(/\s\s+/g, ' ');
+
+    text = text.trim() //trim text
+    text = text.replace(/ /g, "-"); // replace all special char 
+    text = text.toLowerCase();
+    if (!text) {
+        text = 'slg-' + Math.floor(Math.random() * (999 - 100 + 1) + 100);
+    }
+    return text + count;
 }
 
 exports.operationType = {

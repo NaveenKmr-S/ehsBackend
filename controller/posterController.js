@@ -6,7 +6,32 @@ const fs = require("fs");
 const commonFunction = require("../common/common")
 const mongoose = require("mongoose");
 const authorDb = require("../model/authorModel");
+const Counters = require("../model/counterModel");
 
+
+
+function getNextSequenceValue(sequenceName) {
+	console.log("sequenceName", sequenceName)
+	return new Promise((resolve, reject) => {
+
+		// let collection = db.collection('counters');
+		Counters.collection.findAndModify(
+			{ "_id": sequenceName },
+			[],
+			{ "$inc": { sequence_value: 1 } },
+			{ upsert: true, new: true },
+			function (err, result) {
+				if (result && result.value && result.value.sequence_value) {
+					return resolve(parseInt(result.value.sequence_value));
+				} else {
+					return reject(err || "Something went wrong")
+				}
+
+			}
+		);
+
+	});
+}
 exports.getPosterByAuthor = async(req, res, next) => {
     try {
         let payload = req.query
@@ -137,7 +162,7 @@ exports.createPoster = async(req, res, next) => {
         let insertObj = {
             name: payload.name,
             category: payload.category,
-            subCategory: payload.subCategory,
+            subCategory: payload.subCategory || [],
             language: payload.language,
             creator: payload.creator,
             imgUrl: payload.imgUrl,
@@ -163,6 +188,8 @@ exports.createPoster = async(req, res, next) => {
 
         let nameToAppend = "";
         let catIds = []
+
+        //to get the cateogry name and append it
         for (let i = 0; i < insertObj.category.length; i++) {
             let findCr = {
                 isActive: 1,
@@ -173,24 +200,34 @@ exports.createPoster = async(req, res, next) => {
             if (catF && Array.isArray(catF) && catF.length) {
                 nameToAppend = catF[0].title
             } else {
-                throw new Erroe("Invalaid Categeory Id")
+                throw new Error("Invalaid Categeory Id")
             }
         }
 
-        if (!insertObj.name) {
-            throw new Error("Give a proper poster name");
-        }
-        let count = 0
-        let findPosterCount = {
-            isActive: 1,
-            category: {
-                $in: catIds
+        //sub category name
+        let subCatNameToAppend = ""
+        for(let i=0 ; i < insertObj.subCategory.length ; i++) {
+            let findCr = {
+                isActive: 1,
+                _id: mongoose.Types.ObjectId(insertObj.subCategory[i])
+            }
+            let catF = await subCategoryDb.find(findCr).limit(1)
+            if (catF && Array.isArray(catF) && catF.length) {
+                subCatNameToAppend = subCatNameToAppend + " " + catF[0].title
+            } else {
+                throw new Error("Invalaid Categeory Id")
             }
         }
-        count = await posterDb.countDocuments(findPosterCount)
-        insertObj.name = nameToAppend + " | " + insertObj.name + " | " + nameToAppend[0] + "_" + count
-        insertObj.slug = commonFunction.autoCreateSlug(insertObj.name)
-        insertObj.sku = commonFunction.autoCreateSlug(insertObj.name)
+
+        let count = await   getNextSequenceValue("posters")
+        console.log(count)
+       
+        insertObj.name = nameToAppend + " | "  + nameToAppend[0] + "_" + count
+        if(subCatNameToAppend !== ""){
+            insertObj.name = nameToAppend + " | " + subCatNameToAppend + " | " + nameToAppend[0] + "_" + count
+        }
+        insertObj.slug = commonFunction.autoCreateSlugPosters(insertObj.name ,count)
+        insertObj.sku = commonFunction.autoCreateSlugPosters(insertObj.name , count)
 
         let posterAldreadyFound = await posterDb.find({ slug: insertObj.slug, isActive: 1 }).limit(1).exec()
         if (posterAldreadyFound && Array.isArray(posterAldreadyFound) && posterAldreadyFound.length) {
