@@ -213,7 +213,7 @@ exports.createPoster = async(req, res, next) => {
             }
             let catF = await subCategoryDb.find(findCr).limit(1)
             if (catF && Array.isArray(catF) && catF.length) {
-                subCatNameToAppend = subCatNameToAppend + " " + catF[0].title
+                subCatNameToAppend = subCatNameToAppend + " | " + catF[0].title
             } else {
                 throw new Error("Invalaid Categeory Id")
             }
