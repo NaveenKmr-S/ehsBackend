@@ -224,7 +224,7 @@ exports.createPoster = async(req, res, next) => {
        
         insertObj.name = nameToAppend + " | "  + nameToAppend[0] + "_" + count
         if(subCatNameToAppend !== ""){
-            insertObj.name = nameToAppend + " | " + subCatNameToAppend + " | " + nameToAppend[0] + "_" + count
+            insertObj.name = nameToAppend +  subCatNameToAppend + " | " + nameToAppend[0] + "_" + count
         }
         insertObj.slug = commonFunction.autoCreateSlugPosters(insertObj.name ,count)
         insertObj.sku = commonFunction.autoCreateSlugPosters(insertObj.name , count)
