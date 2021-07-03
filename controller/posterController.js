@@ -227,11 +227,13 @@ exports.createPoster = async (req, res, next) => {
         // console.log(count)
 
         let count = insertObj.name
-
+    
         insertObj.name = nameToAppend + " | " + nameToAppend[0] + "_" + insertObj.name
         if (subCatNameToAppend !== "") {
-            insertObj.name = nameToAppend + subCatNameToAppend + " | " + nameToAppend[0] + "_" + insertObj.name
+            console.log("Inside sub cat name")
+            insertObj.name = nameToAppend + subCatNameToAppend + " | " + nameToAppend[0] + "_" + count
         }
+        console.log("insertObj.name", insertObj.name)
         insertObj.slug = commonFunction.autoCreateSlugPosters(insertObj.name, count)
         insertObj.sku = commonFunction.autoCreateSlugPosters(insertObj.name, count)
 
