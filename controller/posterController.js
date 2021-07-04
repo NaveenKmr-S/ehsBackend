@@ -571,7 +571,7 @@ exports.updatePoster = async (req, res, next) => {
                         payload.materialDimension ? updateObj.materialDimension = payload.materialDimension : ""
                         payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
                         payload.poster_language_connector ? updateObj.poster_language_connector = payload.poster_language_connector : ""
-
+                        payload.authors ? updateObj.authors = payload.authors : ""
                     }
                     break;
                 default:
