@@ -579,6 +579,7 @@ exports.updatePoster = async (req, res, next) => {
 
             }
         }
+        console.log(updateObj , "updateObj")
         let result = await posterDb.findOneAndUpdate({ _id: poster_obj_id }, updateObj, { new: true })
         return commonFunction.actionCompleteResponse(res, result)
 
