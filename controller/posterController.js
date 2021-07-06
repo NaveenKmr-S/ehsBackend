@@ -315,6 +315,7 @@ exports.getPosterById = async (req, res, next) => {
             .populate("category")
             .populate("authors")
             .populate("subCategory")
+            .populate('materialDimension')
             .limit(10).exec()
         let bestSellerFindCriteria = {
             isActive: 1,
@@ -359,6 +360,7 @@ exports.getPosterById = async (req, res, next) => {
             .populate("category")
             .populate("subCategory")
             .populate("authors")
+            .populate('materialDimension')
             .limit(10).exec()
         let responsetoSend = {
             posterDetails: result,
