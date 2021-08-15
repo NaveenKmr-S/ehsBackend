@@ -6,8 +6,33 @@ const fs = require("fs");
 const commonFunction = require("../common/common")
 const mongoose = require("mongoose");
 const authorDb = require("../model/authorModel");
+const Counters = require("../model/counterModel");
 
-exports.getPosterByAuthor = async(req, res, next) => {
+
+
+function getNextSequenceValue(sequenceName) {
+    console.log("sequenceName", sequenceName)
+    return new Promise((resolve, reject) => {
+
+        // let collection = db.collection('counters');
+        Counters.collection.findAndModify(
+            { "_id": sequenceName },
+            [],
+            { "$inc": { sequence_value: 1 } },
+            { upsert: true, new: true },
+            function (err, result) {
+                if (result && result.value && result.value.sequence_value) {
+                    return resolve(parseInt(result.value.sequence_value));
+                } else {
+                    return reject(err || "Something went wrong")
+                }
+
+            }
+        );
+
+    });
+}
+exports.getPosterByAuthor = async (req, res, next) => {
     try {
         let payload = req.query
 
@@ -53,7 +78,7 @@ exports.getPosterByAuthor = async(req, res, next) => {
     }
 }
 
-exports.insertUpdateRating = async(req, res, next) => {
+exports.insertUpdateRating = async (req, res, next) => {
     try {
         let payload = req.body
         let userObjId = req.userId;
@@ -131,13 +156,13 @@ exports.insertUpdateRating = async(req, res, next) => {
     }
 }
 
-exports.createPoster = async(req, res, next) => {
+exports.createPoster = async (req, res, next) => {
     try {
         let payload = req.body;
         let insertObj = {
             name: payload.name,
             category: payload.category,
-            subCategory: payload.subCategory,
+            subCategory: payload.subCategory || [],
             language: payload.language,
             creator: payload.creator,
             imgUrl: payload.imgUrl,
@@ -163,6 +188,8 @@ exports.createPoster = async(req, res, next) => {
 
         let nameToAppend = "";
         let catIds = []
+
+        //to get the cateogry name and append it
         for (let i = 0; i < insertObj.category.length; i++) {
             let findCr = {
                 isActive: 1,
@@ -173,24 +200,42 @@ exports.createPoster = async(req, res, next) => {
             if (catF && Array.isArray(catF) && catF.length) {
                 nameToAppend = catF[0].title
             } else {
-                throw new Erroe("Invalaid Categeory Id")
+                throw new Error("Invalaid Categeory Id")
+            }
+        }
+
+        //sub category name
+        let subCatNameToAppend = ""
+        for (let i = 0; i < insertObj.subCategory.length; i++) {
+            let findCr = {
+                isActive: 1,
+                _id: mongoose.Types.ObjectId(insertObj.subCategory[i])
+            }
+            let catF = await subCategoryDb.find(findCr).limit(1)
+            if (catF && Array.isArray(catF) && catF.length) {
+                subCatNameToAppend = subCatNameToAppend + " | " + catF[0].title
+            } else {
+                throw new Error("Invalaid Categeory Id")
             }
         }
 
         if (!insertObj.name) {
-            throw new Error("Give a proper poster name");
+            throw new Error("Name required for insert");
         }
-        let count = 0
-        let findPosterCount = {
-            isActive: 1,
-            category: {
-                $in: catIds
-            }
+
+        // let count = await getNextSequenceValue("posters")
+        // console.log(count)
+
+        let count = insertObj.name
+    
+        insertObj.name = nameToAppend + " | " + nameToAppend[0] + "_" + insertObj.name
+        if (subCatNameToAppend !== "") {
+            console.log("Inside sub cat name")
+            insertObj.name = nameToAppend + subCatNameToAppend + " | " + nameToAppend[0] + "_" + count
         }
-        count = await posterDb.countDocuments(findPosterCount)
-        insertObj.name = nameToAppend + " | " + insertObj.name + " | " + nameToAppend[0] + "_" + count
-        insertObj.slug = commonFunction.autoCreateSlug(insertObj.name)
-        insertObj.sku = commonFunction.autoCreateSlug(insertObj.name)
+        console.log("insertObj.name", insertObj.name)
+        insertObj.slug = commonFunction.autoCreateSlugPosters(insertObj.name, count)
+        insertObj.sku = commonFunction.autoCreateSlugPosters(insertObj.name, count)
 
         let posterAldreadyFound = await posterDb.find({ slug: insertObj.slug, isActive: 1 }).limit(1).exec()
         if (posterAldreadyFound && Array.isArray(posterAldreadyFound) && posterAldreadyFound.length) {
@@ -206,7 +251,7 @@ exports.createPoster = async(req, res, next) => {
     }
 };
 
-exports.getPosterById = async(req, res, next) => {
+exports.getPosterById = async (req, res, next) => {
     try {
         let payload = req.query;
         let findCriteria = {
@@ -270,6 +315,7 @@ exports.getPosterById = async(req, res, next) => {
             .populate("category")
             .populate("authors")
             .populate("subCategory")
+            .populate('materialDimension')
             .limit(10).exec()
         let bestSellerFindCriteria = {
             isActive: 1,
@@ -286,27 +332,27 @@ exports.getPosterById = async(req, res, next) => {
         }]
 
         let arrRatings = [{
-                "$match": findCriteria
-            },
-            {
-                "$unwind": "$rating"
-            },
-            {
-                $group: {
-                    _id: "$rating.rating",
-                    "sumvalues": {
-                        "$sum": 1
-                    }
-                }
-            },
-            {
-                "$project": {
-                    _id: 0,
-                    rating: "$_id",
-                    count: "$sumvalues",
-
+            "$match": findCriteria
+        },
+        {
+            "$unwind": "$rating"
+        },
+        {
+            $group: {
+                _id: "$rating.rating",
+                "sumvalues": {
+                    "$sum": 1
                 }
             }
+        },
+        {
+            "$project": {
+                _id: 0,
+                rating: "$_id",
+                count: "$sumvalues",
+
+            }
+        }
         ]
         let posterRating = await posterDb.aggregate(aggreg)
         let ratingWiseMembers = await posterDb.aggregate(arrRatings)
@@ -314,6 +360,7 @@ exports.getPosterById = async(req, res, next) => {
             .populate("category")
             .populate("subCategory")
             .populate("authors")
+            .populate('materialDimension')
             .limit(10).exec()
         let responsetoSend = {
             posterDetails: result,
@@ -332,7 +379,7 @@ exports.getPosterById = async(req, res, next) => {
     }
 };
 
-exports.getPosterBySubCategory = async(req, res, next) => {
+exports.getPosterBySubCategory = async (req, res, next) => {
     try {
         let payload = req.query
         let findCriteria = {
@@ -404,7 +451,7 @@ exports.getPosterBySubCategory = async(req, res, next) => {
     }
 };
 
-exports.getPosterByLanguage = async(req, res, next) => {
+exports.getPosterByLanguage = async (req, res, next) => {
     try {
         let payload = req.query
         let findCriteria = {
@@ -436,7 +483,7 @@ exports.getPosterByLanguage = async(req, res, next) => {
     }
 }
 
-exports.getPoster = async(req, res, next) => {
+exports.getPoster = async (req, res, next) => {
 
     try {
         let payload = req.query
@@ -465,7 +512,7 @@ exports.getPoster = async(req, res, next) => {
     }
 };
 
-exports.updatePoster = async(req, res, next) => {
+exports.updatePoster = async (req, res, next) => {
     try {
         let payload = req.body;
         let poster_obj_id = payload.poster_obj_id;
@@ -499,22 +546,22 @@ exports.updatePoster = async(req, res, next) => {
             switch (payload.operationType) {
                 case commonFunction.operationType.PUSH:
                     {
-                        payload.category ? updateObj.$addToSet = {...updateObj.$addToSet, category: payload.category } : ""
-                        payload.subCategory ? updateObj.$addToSet = {...updateObj.$addToSet, subCategory: payload.subCategory } : ""
-                        payload.tags ? updateObj.$addToSet = {...updateObj.$addToSet, tags: payload.tags } : ""
-                        payload.materialDimension ? updateObj.$addToSet = {...updateObj.$addToSet, materialDimension: payload.materialDimension } : ""
-                        payload.imgUrl ? updateObj.$addToSet = {...updateObj.$addToSet, imgUrl: payload.imgUrl } : ""
-                        payload.poster_language_connector ? updateObj.$addToSet = {...updateObj.$addToSet, poster_language_connector: payload.poster_language_connector } : ""
+                        payload.category ? updateObj.$addToSet = { ...updateObj.$addToSet, category: payload.category } : ""
+                        payload.subCategory ? updateObj.$addToSet = { ...updateObj.$addToSet, subCategory: payload.subCategory } : ""
+                        payload.tags ? updateObj.$addToSet = { ...updateObj.$addToSet, tags: payload.tags } : ""
+                        payload.materialDimension ? updateObj.$addToSet = { ...updateObj.$addToSet, materialDimension: payload.materialDimension } : ""
+                        payload.imgUrl ? updateObj.$addToSet = { ...updateObj.$addToSet, imgUrl: payload.imgUrl } : ""
+                        payload.poster_language_connector ? updateObj.$addToSet = { ...updateObj.$addToSet, poster_language_connector: payload.poster_language_connector } : ""
                     }
                     break;
                 case commonFunction.operationType.PULL:
                     {
-                        payload.category ? updateObj.$pull = {...updateObj.$pull, category: payload.category } : ""
-                        payload.subCategory ? updateObj.$pull = {...updateObj.$pull, subCategory: payload.subCategory } : ""
-                        payload.tags ? updateObj.$pull = {...updateObj.$pull, tags: payload.tags } : ""
-                        payload.materialDimension ? updateObj.$pull = {...updateObj.$pull, materialDimension: payload.materialDimension } : ""
-                        payload.imgUrl ? updateObj.$pull = {...updateObj.$pull, imgUrl: payload.imgUrl } : ""
-                        payload.poster_language_connector ? updateObj.$pull = {...updateObj.$pull, poster_language_connector: payload.poster_language_connector } : ""
+                        payload.category ? updateObj.$pull = { ...updateObj.$pull, category: payload.category } : ""
+                        payload.subCategory ? updateObj.$pull = { ...updateObj.$pull, subCategory: payload.subCategory } : ""
+                        payload.tags ? updateObj.$pull = { ...updateObj.$pull, tags: payload.tags } : ""
+                        payload.materialDimension ? updateObj.$pull = { ...updateObj.$pull, materialDimension: payload.materialDimension } : ""
+                        payload.imgUrl ? updateObj.$pull = { ...updateObj.$pull, imgUrl: payload.imgUrl } : ""
+                        payload.poster_language_connector ? updateObj.$pull = { ...updateObj.$pull, poster_language_connector: payload.poster_language_connector } : ""
 
                     }
                     break;
@@ -526,7 +573,7 @@ exports.updatePoster = async(req, res, next) => {
                         payload.materialDimension ? updateObj.materialDimension = payload.materialDimension : ""
                         payload.imgUrl ? updateObj.imgUrl = payload.imgUrl : ""
                         payload.poster_language_connector ? updateObj.poster_language_connector = payload.poster_language_connector : ""
-
+                        payload.authors ? updateObj.authors = payload.authors : ""
                     }
                     break;
                 default:
@@ -534,6 +581,7 @@ exports.updatePoster = async(req, res, next) => {
 
             }
         }
+        console.log(updateObj , "updateObj")
         let result = await posterDb.findOneAndUpdate({ _id: poster_obj_id }, updateObj, { new: true })
         return commonFunction.actionCompleteResponse(res, result)
 
@@ -543,7 +591,7 @@ exports.updatePoster = async(req, res, next) => {
     }
 };
 
-exports.uploadFile = async(req, res, next) => {
+exports.uploadFile = async (req, res, next) => {
     try {
         console.log(req.file)
 
