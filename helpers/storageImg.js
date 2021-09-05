@@ -5,7 +5,7 @@ const multerS3 = require("multer-s3");
 
 const s3 = new aws.S3({
     /* ... */
-    secretAccessKey: 'O4R1Ieyd5YCEk89yhgnAXCeOBhKfbu4mev65tirY',
+    secretAccessKey: '6VfZBkVnGvZPw1A6XNjx8bsqS344seutDu8RWeWN',
     accessKeyId: 'AKIAS2VS4BJHWQYYNE7I',
     region: 'us-east-1'
 });
