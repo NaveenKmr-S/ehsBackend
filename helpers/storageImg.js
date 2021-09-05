@@ -14,7 +14,7 @@ const upload = multer({
     storage: multerS3({
         s3: s3,
         acl: 'public-read',
-        bucket: 'ehs-poster',
+        bucket: 'ehsprints',
         metadata: function(req, file, cb) {
             cb(null, { fieldName: file.fieldname });
         },
