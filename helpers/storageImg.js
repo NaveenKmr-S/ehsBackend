@@ -7,14 +7,14 @@ const s3 = new aws.S3({
     /* ... */
     secretAccessKey: 'o9vLuoj0BqDelb5lhRGtsDhpMbm6hC4fDG5qewSQ',
     accessKeyId: 'AKIAS2VS4BJHVMEXN6XR',
-    // region: 'us-east-1'
+    region: 'us-east-1'
 });
 
 const upload = multer({
     storage: multerS3({
         s3: s3,
         acl: 'public-read',
-        bucket: 'ehs-poster-thumbnails',
+        bucket: 'ehs-poster',
         metadata: function(req, file, cb) {
             cb(null, { fieldName: file.fieldname });
         },
